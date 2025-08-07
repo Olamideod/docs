@@ -1,0 +1,340 @@
+---
+title: "JWT vs Session-Based Authentication"
+description: "Understanding the differences between JWT and session-based authentication"
+---
+
+# JWT vs Session-Based Authentication
+
+When building authentication systems, you need to choose between JWT (JSON Web Tokens) and session-based authentication. Both approaches have their strengths and use cases.
+
+## Session-Based Authentication
+
+Session-based authentication stores user state on the server.
+
+### How It Works
+
+1. **Login**: User provides credentials, server validates and creates a session
+2. **Session Storage**: Server stores session data in memory, database, or cache
+3. **Session ID**: Server sends a session ID to the client (usually in a cookie)
+4. **Validation**: Client sends session ID with each request, server validates against stored session
+
+```javascript
+// Server-side session creation
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  
+  // Validate credentials
+  const user = await validateUser(email, password);
+  
+  if (user) {
+    // Create session
+    req.session.userId = user.id;
+    req.session.email = user.email;
+    req.session.role = user.role;
+    
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
+// Protected route
+app.get('/profile', (req, res) => {
+  if (req.session.userId) {
+    // User is authenticated
+    res.json({ user: req.session });
+  } else {
+    res.status(401).json({ error: 'Unauthorized' });
+  }
+});
+```
+
+### Advantages
+
+- **Security**: Sessions can be invalidated immediately
+- **Flexibility**: Easy to store complex user data
+- **Control**: Server has full control over session lifecycle
+- **Simplicity**: Straightforward to implement and debug
+
+### Disadvantages
+
+- **Scalability**: Sessions must be shared across server instances
+- **Memory Usage**: Server memory usage grows with active sessions
+- **Database Load**: Session lookups add database queries
+- **Cross-Domain**: Sessions don't work well across domains
+
+## JWT-Based Authentication
+
+JWT authentication is stateless and stores user data in tokens.
+
+### How It Works
+
+1. **Login**: User provides credentials, server validates and creates a JWT
+2. **Token Creation**: Server creates a signed token containing user data
+3. **Token Storage**: Client stores the JWT (localStorage, sessionStorage, or cookie)
+4. **Validation**: Client sends JWT with each request, server validates signature
+
+```javascript
+// Server-side JWT creation
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  
+  // Validate credentials
+  const user = await validateUser(email, password);
+  
+  if (user) {
+    // Create JWT
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email, 
+        role: user.role 
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    
+    res.json({ token });
+  } else {
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
+// Protected route
+app.get('/profile', authenticateToken, (req, res) => {
+  // User data is in req.user (from JWT)
+  res.json({ user: req.user });
+});
+
+// JWT middleware
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+  
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid token' });
+    }
+    req.user = user;
+    next();
+  });
+}
+```
+
+### Advantages
+
+- **Stateless**: No server-side storage required
+- **Scalability**: Works across multiple servers without shared state
+- **Performance**: No database lookups for authentication
+- **Cross-Domain**: Works across different domains and services
+- **Mobile-Friendly**: Easy to implement in mobile apps
+
+### Disadvantages
+
+- **Size**: JWTs can become large with user data
+- **Security**: Tokens cannot be invalidated before expiration
+- **Storage**: Client-side storage has security implications
+- **Complexity**: Requires careful token management
+
+## When to Use Each Approach
+
+### Choose Sessions When:
+
+- **Security is Critical**: You need immediate session invalidation
+- **Complex User Data**: You need to store large amounts of user state
+- **Single Domain**: Your application runs on a single domain
+- **Simple Architecture**: You want straightforward implementation
+
+### Choose JWT When:
+
+- **Microservices**: You have multiple services that need authentication
+- **Mobile Apps**: You're building mobile applications
+- **API-First**: You're building APIs for third-party consumption
+- **Scalability**: You need to scale across multiple servers
+- **Cross-Domain**: Your application spans multiple domains
+
+## Hybrid Approaches
+
+Many modern applications use a hybrid approach:
+
+### Short-Lived JWTs with Refresh Tokens
+
+```javascript
+// Login with access and refresh tokens
+app.post('/login', async (req, res) => {
+  const user = await validateUser(req.body.email, req.body.password);
+  
+  if (user) {
+    // Short-lived access token (15 minutes)
+    const accessToken = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+    
+    // Long-lived refresh token (7 days)
+    const refreshToken = jwt.sign(
+      { userId: user.id, type: 'refresh' },
+      process.env.REFRESH_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    // Store refresh token in database
+    await storeRefreshToken(user.id, refreshToken);
+    
+    res.json({ accessToken, refreshToken });
+  }
+});
+
+// Refresh access token
+app.post('/refresh', async (req, res) => {
+  const { refreshToken } = req.body;
+  
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET);
+    const storedToken = await getRefreshToken(decoded.userId);
+    
+    if (storedToken === refreshToken) {
+      const user = await getUser(decoded.userId);
+      const newAccessToken = jwt.sign(
+        { userId: user.id, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: '15m' }
+      );
+      
+      res.json({ accessToken: newAccessToken });
+    } else {
+      res.status(401).json({ error: 'Invalid refresh token' });
+    }
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid refresh token' });
+  }
+});
+```
+
+### Session with JWT for Cross-Service Communication
+
+```javascript
+// Main application uses sessions
+app.post('/login', async (req, res) => {
+  const user = await validateUser(req.body.email, req.body.password);
+  
+  if (user) {
+    // Create session
+    req.session.userId = user.id;
+    req.session.email = user.email;
+    
+    // Also create JWT for API calls
+    const apiToken = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.API_SECRET,
+      { expiresIn: '1h' }
+    );
+    
+    res.json({ 
+      success: true, 
+      apiToken // For API calls to other services
+    });
+  }
+});
+```
+
+## Security Considerations
+
+### Session Security
+
+```javascript
+// Secure session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS only
+    httpOnly: true, // Prevent XSS
+    sameSite: 'strict', // Prevent CSRF
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  },
+  store: new RedisStore({ // Use Redis for scalability
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT
+  })
+}));
+```
+
+### JWT Security
+
+```javascript
+// Secure JWT configuration
+const jwtOptions = {
+  algorithm: 'HS256',
+  expiresIn: '15m',
+  issuer: 'your-app.com',
+  audience: 'your-app-users'
+};
+
+// Create token with minimal data
+const token = jwt.sign(
+  { 
+    sub: user.id, // Use 'sub' for user ID
+    email: user.email,
+    iat: Math.floor(Date.now() / 1000), // Issued at
+    exp: Math.floor(Date.now() / 1000) + (15 * 60) // Expires in 15 minutes
+  },
+  process.env.JWT_SECRET,
+  jwtOptions
+);
+```
+
+## Performance Comparison
+
+| Aspect | Sessions | JWT |
+|--------|----------|-----|
+| **Server Memory** | High (stores sessions) | Low (stateless) |
+| **Database Load** | High (session lookups) | Low (no lookups) |
+| **Network Overhead** | Low (session ID only) | Medium (token size) |
+| **Scalability** | Requires shared storage | Stateless scaling |
+| **Cross-Domain** | Limited | Excellent |
+
+## Best Practices
+
+### Session Best Practices
+
+1. **Use Secure Cookies**: Set `secure`, `httpOnly`, and `sameSite` flags
+2. **Store Sessions Externally**: Use Redis or database for session storage
+3. **Set Expiration**: Configure appropriate session timeouts
+4. **Regenerate IDs**: Regenerate session ID after login to prevent session fixation
+5. **Clean Up**: Implement session cleanup for expired sessions
+
+### JWT Best Practices
+
+1. **Keep Tokens Small**: Only include necessary user data
+2. **Use Short Expiration**: Set short expiration times for access tokens
+3. **Implement Refresh Tokens**: Use refresh tokens for longer sessions
+4. **Secure Storage**: Store tokens securely on the client
+5. **Token Rotation**: Implement token rotation for enhanced security
+
+## Protekt's Approach
+
+Protekt uses a hybrid approach that combines the best of both worlds:
+
+- **Short-lived JWTs** for API authentication (15 minutes)
+- **Refresh tokens** for session management (7 days)
+- **Session storage** for immediate invalidation capabilities
+- **Cross-service compatibility** for microservice architectures
+
+This approach provides:
+- **Immediate invalidation** when needed
+- **Stateless API authentication** for scalability
+- **Flexible session management** for web applications
+- **Cross-domain support** for complex architectures
+
+## Next Steps
+
+- [Architecture Decisions](/explanation/architecture-decisions) - Learn about our architectural choices
+- [Scopes and Claims](/explanation/scopes-and-claims) - Understand JWT scopes and claims
+- [Multi-Tenant](/explanation/multi-tenant) - Multi-tenant authentication strategies 

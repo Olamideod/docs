@@ -1,0 +1,69 @@
+---
+title: "Overview"
+description: "Learn about Protekt's authentication and authorization platform"
+---
+
+# What is Protekt?
+
+Protekt is a comprehensive authentication and authorization platform designed to secure modern applications. Whether you're building web applications, mobile apps, or APIs, Protekt provides the tools you need to implement robust security without the complexity.
+
+## Key Features
+
+### 🔐 Multi-Factor Authentication
+- **TOTP (Time-based One-Time Password)**: Google Authenticator, Authy, and other TOTP apps
+- **SMS Authentication**: One-time codes sent via SMS
+- **WebAuthn**: Passwordless authentication using biometrics and security keys
+
+### 🏢 Enterprise SSO
+- **SAML 2.0**: Connect with enterprise identity providers
+- **OAuth 2.0**: Social login and third-party integrations
+- **OIDC**: Modern OpenID Connect implementation
+
+### 🛡️ Security Features
+- **Brute Force Protection**: Automatic rate limiting and account lockouts
+- **Breached Password Detection**: Check against known compromised passwords
+- **Attack Monitoring**: Real-time threat detection and alerts
+
+### 👥 User Management
+- **Role-Based Access Control (RBAC)**: Fine-grained permissions
+- **Multi-Tenant Support**: B2B organization management
+- **Custom Claims**: Extensible user attributes
+
+## Architecture
+
+Protekt follows a modern, cloud-native architecture:
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Your App      │    │    Protekt      │    │   Identity      │
+│                 │◄──►│   Platform      │◄──►│   Providers     │
+│  (Web/Mobile)   │    │                 │    │  (SAML/OAuth)   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+## Getting Started
+
+Choose your path to get started:
+
+<Columns cols={2}>
+  <Card
+    title="Quick Start"
+    icon="rocket"
+    href="/getting-started/quickstart"
+  >
+    Get up and running in 5 minutes with our interactive wizard.
+  </Card>
+  <Card
+    title="Authentication Setup"
+    icon="key"
+    href="/getting-started/authentication"
+  >
+    Learn about authentication flows and configuration.
+  </Card>
+</Columns>
+
+## Next Steps
+
+- [First Integration](/tutorials/first-integration) - Build your first authentication flow
+- [Secure Your App](/tutorials/secure-your-app) - Best practices for security
+- [API Reference](/reference/redocusaurus) - Complete API documentation 

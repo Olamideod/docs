@@ -1,0 +1,342 @@
+---
+title: "Enable Multi-Factor Authentication"
+description: "Set up TOTP, SMS, and WebAuthn for enhanced security"
+---
+
+# Enable Multi-Factor Authentication
+
+Multi-factor authentication (MFA) adds an extra layer of security to your application by requiring users to provide additional verification beyond their password.
+
+## Supported MFA Methods
+
+Protekt supports three types of multi-factor authentication:
+
+- **TOTP (Time-based One-Time Password)**: Google Authenticator, Authy, and other TOTP apps
+- **SMS**: One-time codes sent via SMS
+- **WebAuthn**: Passwordless authentication using biometrics and security keys
+
+## TOTP Setup
+
+### Step 1: Enable TOTP for Your Application
+
+In your Protekt dashboard, navigate to **Security** > **Multi-Factor Authentication** and enable TOTP.
+
+### Step 2: Configure TOTP Settings
+
+```javascript
+// Configure TOTP settings
+const totpConfig = {
+  issuer: 'Your App Name',
+  algorithm: 'SHA1',
+  digits: 6,
+  period: 30
+};
+
+await protekt.enableMFA({
+  type: 'totp',
+  ...totpConfig
+});
+```
+
+### Step 3: Generate QR Code for Users
+
+```javascript
+// Generate QR code for user setup
+const qrCodeData = await protekt.generateTOTPQR({
+  userId: 'user-id',
+  email: 'user@example.com',
+  issuer: 'Your App Name'
+});
+
+// Display QR code to user
+console.log('QR Code URL:', qrCodeData.qrCodeUrl);
+console.log('Secret Key:', qrCodeData.secret);
+```
+
+### Step 4: Verify TOTP Code
+
+```javascript
+// Verify user's TOTP code
+const isValid = await protekt.verifyTOTP({
+  userId: 'user-id',
+  code: '123456'
+});
+
+if (isValid) {
+  console.log('TOTP verification successful');
+} else {
+  console.log('Invalid TOTP code');
+}
+```
+
+## SMS Authentication
+
+### Step 1: Configure SMS Provider
+
+Set up your SMS provider in the Protekt dashboard:
+
+```javascript
+// Configure SMS settings
+const smsConfig = {
+  provider: 'twilio', // or 'aws-sns', 'messagebird'
+  accountSid: 'your-twilio-sid',
+  authToken: 'your-twilio-token',
+  fromNumber: '+1234567890'
+};
+
+await protekt.configureSMS(smsConfig);
+```
+
+### Step 2: Send SMS Code
+
+```javascript
+// Send SMS verification code
+await protekt.sendSMSCode({
+  userId: 'user-id',
+  phoneNumber: '+1234567890'
+});
+```
+
+### Step 3: Verify SMS Code
+
+```javascript
+// Verify SMS code
+const isValid = await protekt.verifySMSCode({
+  userId: 'user-id',
+  code: '123456'
+});
+
+if (isValid) {
+  console.log('SMS verification successful');
+} else {
+  console.log('Invalid SMS code');
+}
+```
+
+## WebAuthn Setup
+
+### Step 1: Enable WebAuthn
+
+```javascript
+// Enable WebAuthn for passwordless authentication
+await protekt.enableWebAuthn({
+  rpName: 'Your App Name',
+  rpId: 'your-app.com',
+  userVerification: 'preferred',
+  authenticatorSelection: {
+    authenticatorAttachment: 'platform',
+    userVerification: 'preferred'
+  }
+});
+```
+
+### Step 2: Register Security Key
+
+```javascript
+// Register a new security key
+const registrationOptions = await protekt.generateWebAuthnRegistration({
+  userId: 'user-id',
+  userName: 'user@example.com',
+  displayName: 'User Name'
+});
+
+// Present options to user's browser
+const credential = await navigator.credentials.create(registrationOptions);
+
+// Verify registration
+await protekt.verifyWebAuthnRegistration({
+  userId: 'user-id',
+  credential: credential
+});
+```
+
+### Step 3: Authenticate with WebAuthn
+
+```javascript
+// Generate authentication options
+const authOptions = await protekt.generateWebAuthnAuthentication({
+  userId: 'user-id'
+});
+
+// Present options to user's browser
+const assertion = await navigator.credentials.get(authOptions);
+
+// Verify authentication
+const isValid = await protekt.verifyWebAuthnAuthentication({
+  userId: 'user-id',
+  assertion: assertion
+});
+```
+
+## MFA Policies
+
+### Configure MFA Requirements
+
+```javascript
+// Set MFA policies
+const mfaPolicy = {
+  requireMFA: true,
+  allowedMethods: ['totp', 'sms', 'webauthn'],
+  rememberDevice: true,
+  rememberDeviceDays: 30,
+  backupCodes: true,
+  backupCodesCount: 10
+};
+
+await protekt.setMFAPolicy(mfaPolicy);
+```
+
+### Conditional MFA
+
+```javascript
+// Require MFA based on conditions
+const conditionalMFA = {
+  requireMFAFor: {
+    adminUsers: true,
+    highValueTransactions: true,
+    newDevices: true,
+    suspiciousActivity: true
+  },
+  skipMFAFor: {
+    trustedDevices: true,
+    lowRiskActions: true
+  }
+};
+
+await protekt.setConditionalMFAPolicy(conditionalMFA);
+```
+
+## User Experience
+
+### MFA Setup Flow
+
+```javascript
+// Complete MFA setup flow
+const setupMFA = async (userId) => {
+  // 1. Check if user has MFA enabled
+  const mfaStatus = await protekt.getMFAStatus(userId);
+  
+  if (!mfaStatus.enabled) {
+    // 2. Present MFA options to user
+    const mfaOptions = await protekt.getMFAOptions();
+    
+    // 3. User selects preferred method
+    const selectedMethod = 'totp'; // or 'sms', 'webauthn'
+    
+    // 4. Setup selected method
+    if (selectedMethod === 'totp') {
+      const qrCode = await protekt.generateTOTPQR({
+        userId,
+        email: 'user@example.com',
+        issuer: 'Your App'
+      });
+      
+      // Display QR code to user
+      displayQRCode(qrCode);
+    }
+    
+    // 5. Verify setup
+    const isVerified = await protekt.verifyMFASetup(userId, selectedMethod);
+    
+    if (isVerified) {
+      await protekt.enableMFAForUser(userId, selectedMethod);
+    }
+  }
+};
+```
+
+### MFA Challenge Flow
+
+```javascript
+// Handle MFA challenge during login
+const handleMFACallenge = async (userId, mfaMethod) => {
+  switch (mfaMethod) {
+    case 'totp':
+      // User enters TOTP code from their app
+      const totpCode = prompt('Enter your TOTP code:');
+      return await protekt.verifyTOTP({ userId, code: totpCode });
+      
+    case 'sms':
+      // Send SMS code and verify
+      await protekt.sendSMSCode({ userId, phoneNumber: '+1234567890' });
+      const smsCode = prompt('Enter SMS code:');
+      return await protekt.verifySMSCode({ userId, code: smsCode });
+      
+    case 'webauthn':
+      // WebAuthn authentication
+      const authOptions = await protekt.generateWebAuthnAuthentication({ userId });
+      const assertion = await navigator.credentials.get(authOptions);
+      return await protekt.verifyWebAuthnAuthentication({ userId, assertion });
+  }
+};
+```
+
+## Backup Codes
+
+### Generate Backup Codes
+
+```javascript
+// Generate backup codes for emergency access
+const backupCodes = await protekt.generateBackupCodes({
+  userId: 'user-id',
+  count: 10
+});
+
+// Display codes to user (store securely)
+console.log('Backup Codes:', backupCodes);
+```
+
+### Use Backup Code
+
+```javascript
+// Verify backup code
+const isValid = await protekt.verifyBackupCode({
+  userId: 'user-id',
+  code: 'ABCD-EFGH-IJKL-MNOP'
+});
+
+if (isValid) {
+  console.log('Backup code accepted');
+  // Allow access and prompt for new MFA setup
+}
+```
+
+## Security Best Practices
+
+1. **Encourage MFA Adoption**: Make MFA opt-out rather than opt-in
+2. **Multiple Methods**: Allow users to set up multiple MFA methods
+3. **Backup Codes**: Always provide backup codes for account recovery
+4. **Device Remembering**: Allow users to remember trusted devices
+5. **Rate Limiting**: Implement rate limiting for MFA attempts
+6. **Monitoring**: Monitor MFA usage and suspicious activity
+
+## Troubleshooting
+
+### Common Issues
+
+1. **TOTP Clock Skew**: Ensure server and client clocks are synchronized
+2. **SMS Delivery**: Verify SMS provider configuration and phone number format
+3. **WebAuthn Support**: Check browser compatibility and security key support
+4. **User Experience**: Provide clear instructions and error messages
+
+### Error Handling
+
+```javascript
+try {
+  await protekt.verifyTOTP({ userId, code });
+} catch (error) {
+  if (error.code === 'INVALID_CODE') {
+    showError('Invalid TOTP code. Please try again.');
+  } else if (error.code === 'RATE_LIMITED') {
+    showError('Too many attempts. Please wait before trying again.');
+  } else {
+    showError('An error occurred. Please contact support.');
+  }
+}
+```
+
+## Next Steps
+
+- [Attack Protection](/how-to-guides/attack-protection) - Protect against brute force attacks
+- [Custom Claims](/how-to-guides/custom-claims) - Add MFA status to user claims
+- [Hooks and Rules](/how-to-guides/hooks-and-rules) - Customize MFA behavior 

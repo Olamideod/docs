@@ -1,0 +1,206 @@
+---
+title: "Glossary"
+description: "Definitions of authentication and security terms used in Protekt"
+---
+
+# Glossary
+
+Definitions of authentication and security terms used throughout the Protekt documentation.
+
+## A
+
+### Access Token
+A credential used to access protected resources. In OAuth 2.0, access tokens are short-lived and contain user permissions (scopes).
+
+### Authentication
+The process of verifying the identity of a user, device, or system. Authentication answers the question "Who are you?"
+
+### Authorization
+The process of determining what resources a user can access and what actions they can perform. Authorization answers the question "What can you do?"
+
+### Authorization Code
+A temporary code returned by the authorization server after user consent. Used in the OAuth 2.0 authorization code flow to exchange for access tokens.
+
+## B
+
+### Bearer Token
+A type of access token that can be used by anyone who possesses it. Bearer tokens should be transmitted securely and have short lifespans.
+
+### Biometric Authentication
+Authentication using unique physical characteristics like fingerprints, facial recognition, or voice patterns.
+
+### Brute Force Attack
+A security attack that attempts to gain access by systematically trying different passwords or keys.
+
+## C
+
+### Claims
+Information about a user contained in a JWT or ID token. Common claims include user ID, email, name, and roles.
+
+### Client
+An application that requests access to protected resources on behalf of a user. In OAuth 2.0, clients are registered with the authorization server.
+
+### Client ID
+A unique identifier for an OAuth client application, used to identify the application to the authorization server.
+
+### Client Secret
+A confidential credential used by the client to authenticate with the authorization server. Should be kept secure and not exposed to users.
+
+### CORS (Cross-Origin Resource Sharing)
+A security feature that controls which web pages can make requests to a different domain than the one serving the web page.
+
+## D
+
+### Deep Link
+A URL that links directly to a specific location within a mobile app, used for authentication callbacks in mobile applications.
+
+### Domain
+The unique identifier for your Protekt tenant, typically in the format `your-tenant.protekt.com`.
+
+## E
+
+### Encryption
+The process of encoding information so that only authorized parties can access it. Protekt uses encryption to protect data in transit and at rest.
+
+## F
+
+### Federation
+A system that allows users to authenticate with one service and access multiple related services without re-authenticating.
+
+## H
+
+### Hash
+A one-way function that converts data into a fixed-size string. Used for password storage and data integrity verification.
+
+### HTTPS
+A secure version of HTTP that uses encryption to protect data transmitted between the client and server.
+
+## I
+
+### ID Token
+A JWT that contains information about the authenticated user, typically used in OpenID Connect flows.
+
+### Identity Provider (IdP)
+A service that creates, maintains, and manages identity information for principals (users, services, or systems).
+
+### Implicit Flow
+An OAuth 2.0 flow where the access token is returned directly to the client without an authorization code exchange.
+
+## J
+
+### JWT (JSON Web Token)
+A compact, URL-safe means of representing claims to be transferred between two parties. JWTs are self-contained and can be verified without contacting the issuer.
+
+## M
+
+### Magic Link
+A secure, time-limited URL sent to a user's email that allows them to authenticate without entering a password.
+
+### Multi-Factor Authentication (MFA)
+A security method that requires users to provide two or more verification factors to gain access to a resource.
+
+### Multi-Tenant
+An architecture where a single application serves multiple organizations (tenants) while keeping their data isolated.
+
+## O
+
+### OAuth 2.0
+An authorization framework that allows third-party applications to access user resources without exposing credentials.
+
+### OpenID Connect (OIDC)
+An authentication layer built on top of OAuth 2.0 that provides identity verification and user information.
+
+### Organization
+A group of users within a multi-tenant application, typically representing a company or team.
+
+## P
+
+### Passwordless Authentication
+Authentication methods that don't require traditional passwords, such as magic links, biometrics, or security keys.
+
+### PKCE (Proof Key for Code Exchange)
+An extension to OAuth 2.0 that adds security for public clients by using a code verifier and code challenge.
+
+### Principal
+The entity (user, service, or system) that is being authenticated and authorized.
+
+## R
+
+### Rate Limiting
+A technique used to control the rate of requests a client can make to an API, preventing abuse and ensuring fair usage.
+
+### Redirect URI
+The URL where users are redirected after completing authentication, specified when registering an OAuth client.
+
+### Refresh Token
+A long-lived credential used to obtain new access tokens without requiring user re-authentication.
+
+### Role-Based Access Control (RBAC)
+A method of restricting system access based on the roles of individual users within an organization.
+
+## S
+
+### SAML (Security Assertion Markup Language)
+An XML-based standard for exchanging authentication and authorization data between parties, commonly used for enterprise SSO.
+
+### Scope
+A permission that defines what resources an access token can access. Scopes are requested during the OAuth flow.
+
+### Security Key
+A physical device used for authentication, typically supporting WebAuthn standards for passwordless authentication.
+
+### Session
+A period of interaction between a user and a system, typically maintained using session cookies or tokens.
+
+### Single Sign-On (SSO)
+A session and user authentication service that permits a user to use one set of login credentials to access multiple applications.
+
+### Social Login
+Authentication using existing accounts from social media platforms like Google, Facebook, or GitHub.
+
+## T
+
+### TOTP (Time-based One-Time Password)
+A temporary passcode generated by an algorithm that uses the current time as a source of uniqueness, commonly used in MFA.
+
+### Token
+A credential that represents the authorization to access a resource, typically an access token or ID token.
+
+### Token Rotation
+A security practice where tokens are regularly replaced with new ones, reducing the impact of token compromise.
+
+## U
+
+### User
+An individual who interacts with your application and requires authentication and authorization.
+
+### User Pool
+A collection of users in a multi-tenant system, typically organized by organization or application.
+
+## V
+
+### Verification
+The process of confirming the authenticity of a token, signature, or other credential.
+
+## W
+
+### WebAuthn
+A web standard for passwordless authentication using public-key cryptography, supported by modern browsers and devices.
+
+### Webhook
+A mechanism for real-time communication between systems, used to notify applications of events like user creation or login.
+
+## X
+
+### XSS (Cross-Site Scripting)
+A security vulnerability that allows attackers to inject malicious scripts into web pages viewed by other users.
+
+## Y
+
+### YubiKey
+A popular brand of security keys that support various authentication protocols including WebAuthn and TOTP.
+
+## Z
+
+### Zero Trust
+A security model that requires strict identity verification for every person and device trying to access resources, regardless of whether they are inside or outside the network perimeter. 

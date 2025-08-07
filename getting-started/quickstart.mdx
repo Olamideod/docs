@@ -1,0 +1,98 @@
+---
+title: "Quick Start"
+description: "Get up and running with Protekt in 5 minutes"
+---
+
+# Quick Start Guide
+
+Get Protekt integrated into your application in just 5 minutes using our interactive setup wizard.
+
+## Interactive Setup Wizard
+
+<Card
+  title="Launch Setup Wizard"
+  icon="wizard"
+  href="/getting-started/interactive-wizard"
+>
+  Our interactive wizard will guide you through the setup process based on your platform and requirements.
+</Card>
+
+## Manual Setup
+
+If you prefer to set up manually, follow these steps:
+
+### 1. Create Your Account
+
+1. Visit [dashboard.protekt.com](https://dashboard.protekt.com)
+2. Sign up for a free account
+3. Create your first application
+
+### 2. Configure Your Application
+
+```javascript
+// Initialize Protekt SDK
+import { Protekt } from '@protekt/sdk';
+
+const protekt = new Protekt({
+  domain: 'your-tenant.protekt.com',
+  clientId: 'your-client-id',
+  redirectUri: 'https://your-app.com/callback'
+});
+```
+
+### 3. Add Authentication
+
+```javascript
+// Redirect to login
+await protekt.login();
+
+// Handle callback
+protekt.handleCallback();
+```
+
+### 4. Protect Your Routes
+
+```javascript
+// Check authentication status
+if (await protekt.isAuthenticated()) {
+  // User is logged in
+  const user = await protekt.getUser();
+} else {
+  // Redirect to login
+  await protekt.login();
+}
+```
+
+## Platform-Specific Guides
+
+Choose your platform for detailed instructions:
+
+<Columns cols={3}>
+  <Card
+    title="Web Applications"
+    icon="globe"
+    href="/tutorials/first-integration"
+  >
+    React, Vue, Angular, and vanilla JavaScript
+  </Card>
+  <Card
+    title="Mobile Apps"
+    icon="mobile"
+    href="/tutorials/mobile-app"
+  >
+    React Native, Flutter, iOS, and Android
+  </Card>
+  <Card
+    title="Server-to-Server"
+    icon="server"
+    href="/tutorials/server-to-server"
+  >
+    API authentication and machine-to-machine
+  </Card>
+</Columns>
+
+## Next Steps
+
+- [Authentication Configuration](/getting-started/authentication) - Learn about authentication flows
+- [First Integration](/tutorials/first-integration) - Build your first complete integration
+- [Security Best Practices](/tutorials/secure-your-app) - Secure your application properly 

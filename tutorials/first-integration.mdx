@@ -1,0 +1,332 @@
+---
+title: "First Integration"
+description: "Build your first authentication integration with Protekt"
+---
+
+# First Integration
+
+This tutorial will guide you through building your first authentication integration with Protekt. We'll create a simple web application that allows users to sign up, log in, and access protected content.
+
+## Prerequisites
+
+- Node.js 16+ installed
+- A Protekt account (sign up at [dashboard.protekt.com](https://dashboard.protekt.com))
+- Basic knowledge of JavaScript/React
+
+## Step 1: Create Your Application
+
+First, create a new React application:
+
+```bash
+npx create-react-app protekt-demo
+cd protekt-demo
+npm install @protekt/sdk
+```
+
+## Step 2: Configure Protekt
+
+1. Go to your [Protekt Dashboard](https://dashboard.protekt.com)
+2. Create a new application
+3. Note your `domain`, `clientId`, and `redirectUri`
+
+## Step 3: Initialize Protekt SDK
+
+Create a configuration file for Protekt:
+
+```javascript
+// src/config/protekt.js
+import { Protekt } from '@protekt/sdk';
+
+export const protekt = new Protekt({
+  domain: 'your-tenant.protekt.com',
+  clientId: 'your-client-id',
+  redirectUri: 'http://localhost:3000/callback',
+  responseType: 'code'
+});
+```
+
+## Step 4: Create Authentication Components
+
+### Login Component
+
+```jsx
+// src/components/Login.js
+import React from 'react';
+import { protekt } from '../config/protekt';
+
+const Login = () => {
+  const handleLogin = async () => {
+    try {
+      await protekt.login();
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
+
+  return (
+    <div className="login-container">
+      <h2>Welcome to Our App</h2>
+      <p>Sign in to access your account</p>
+      <button onClick={handleLogin} className="login-button">
+        Sign In with Protekt
+      </button>
+    </div>
+  );
+};
+
+export default Login;
+```
+
+### Callback Handler
+
+```jsx
+// src/components/Callback.js
+import React, { useEffect } from 'react';
+import { protekt } from '../config/protekt';
+import { useNavigate } from 'react-router-dom';
+
+const Callback = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleCallback = async () => {
+      try {
+        await protekt.handleCallback();
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('Callback failed:', error);
+        navigate('/login');
+      }
+    };
+
+    handleCallback();
+  }, [navigate]);
+
+  return (
+    <div className="callback-container">
+      <p>Completing sign in...</p>
+    </div>
+  );
+};
+
+export default Callback;
+```
+
+### Protected Dashboard
+
+```jsx
+// src/components/Dashboard.js
+import React, { useState, useEffect } from 'react';
+import { protekt } from '../config/protekt';
+
+const Dashboard = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const userData = await protekt.getUser();
+        setUser(userData);
+      } catch (error) {
+        console.error('Failed to load user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUser();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await protekt.logout();
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="dashboard">
+      <h1>Welcome, {user?.name}!</h1>
+      <div className="user-info">
+        <p>Email: {user?.email}</p>
+        <p>User ID: {user?.sub}</p>
+      </div>
+      <button onClick={handleLogout} className="logout-button">
+        Sign Out
+      </button>
+    </div>
+  );
+};
+
+export default Dashboard;
+```
+
+## Step 5: Set Up Routing
+
+Install React Router and set up your routes:
+
+```bash
+npm install react-router-dom
+```
+
+```jsx
+// src/App.js
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Login from './components/Login';
+import Callback from './components/Callback';
+import Dashboard from './components/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/callback" element={<Callback />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/" element={<Login />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+```
+
+### Protected Route Component
+
+```jsx
+// src/components/ProtectedRoute.js
+import React, { useState, useEffect } from 'react';
+import { protekt } from '../config/protekt';
+
+const ProtectedRoute = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const authenticated = await protekt.isAuthenticated();
+        setIsAuthenticated(authenticated);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    window.location.href = '/login';
+    return null;
+  }
+
+  return children;
+};
+
+export default ProtectedRoute;
+```
+
+## Step 6: Add Styling
+
+Add some basic CSS to make it look good:
+
+```css
+/* src/App.css */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+}
+
+.login-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.dashboard {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.user-info {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 4px;
+  margin: 20px 0;
+}
+
+.logout-button {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+```
+
+## Step 7: Test Your Integration
+
+1. Start your development server:
+   ```bash
+   npm start
+   ```
+
+2. Navigate to `http://localhost:3000`
+3. Click "Sign In with Protekt"
+4. Complete the authentication flow
+5. You should be redirected to the dashboard
+
+## Next Steps
+
+Now that you have a basic integration working, explore these advanced features:
+
+- [Multi-Factor Authentication](/how-to-guides/enable-mfa) - Add TOTP, SMS, or WebAuthn
+- [Role-Based Access Control](/how-to-guides/setup-rbac) - Implement user roles and permissions
+- [Social Login](/tutorials/secure-your-app) - Add Google, GitHub, and other social providers
+- [Custom Claims](/how-to-guides/custom-claims) - Add custom user attributes
+
+## Troubleshooting
+
+If you encounter issues:
+
+1. **Redirect URI mismatch**: Ensure your redirect URI in the dashboard matches exactly
+2. **CORS errors**: Make sure your domain is configured correctly
+3. **Authentication failures**: Check your client ID and domain settings
+
+For more help, see our [Troubleshooting Guide](/troubleshooting/common-errors). 

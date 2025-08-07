@@ -1,0 +1,377 @@
+---
+title: "API Reference"
+description: "Complete API documentation with interactive examples"
+---
+
+# API Reference
+
+Explore the complete Protekt API with interactive examples and try-it functionality.
+
+## Interactive API Documentation
+
+<Card
+  title="OpenAPI Documentation"
+  icon="code"
+  href="/reference/openapi.yaml"
+>
+  View the complete OpenAPI specification for the Protekt API.
+</Card>
+
+## Authentication
+
+All API requests require authentication using Bearer tokens.
+
+```bash
+curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  https://api.protekt.com/v1/users
+```
+
+## Base URL
+
+```
+https://api.protekt.com/v1
+```
+
+## Rate Limits
+
+- **Free Plan**: 1,000 requests/hour
+- **Pro Plan**: 10,000 requests/hour
+- **Enterprise Plan**: 100,000 requests/hour
+
+## SDKs
+
+Choose your preferred SDK for easier integration:
+
+<Columns cols={3}>
+  <Card
+    title="Node.js SDK"
+    icon="node"
+    href="/reference/sdks/node"
+  >
+    Official Node.js SDK with TypeScript support
+  </Card>
+  <Card
+    title="Python SDK"
+    icon="python"
+    href="/reference/sdks/python"
+  >
+    Python SDK for server-side applications
+  </Card>
+  <Card
+    title="Go SDK"
+    icon="go"
+    href="/reference/sdks/go"
+  >
+    Go SDK for high-performance applications
+  </Card>
+</Columns>
+
+## Postman Collection
+
+<Card
+  title="Download Postman Collection"
+  icon="download"
+  href="/reference/postman-collection.json"
+>
+  Import our Postman collection to test the API directly in Postman.
+</Card>
+
+## API Endpoints
+
+### Authentication
+
+#### POST /oauth/token
+
+Exchange authorization code for access token.
+
+```bash
+curl -X POST https://api.protekt.com/v1/oauth/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code" \
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "client_secret=YOUR_CLIENT_SECRET" \
+  -d "code=AUTHORIZATION_CODE" \
+  -d "redirect_uri=YOUR_REDIRECT_URI"
+```
+
+**Response:**
+
+```json
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "REFRESH_TOKEN",
+  "scope": "openid profile email"
+}
+```
+
+#### POST /oauth/revoke
+
+Revoke an access token.
+
+```bash
+curl -X POST https://api.protekt.com/v1/oauth/revoke \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "token=ACCESS_TOKEN"
+```
+
+### Users
+
+#### GET /users
+
+List all users (admin only).
+
+```bash
+curl -H "Authorization: Bearer ACCESS_TOKEN" \
+  https://api.protekt.com/v1/users
+```
+
+#### GET /users/{id}
+
+Get user by ID.
+
+```bash
+curl -H "Authorization: Bearer ACCESS_TOKEN" \
+  https://api.protekt.com/v1/users/USER_ID
+```
+
+#### POST /users
+
+Create a new user.
+
+```bash
+curl -X POST https://api.protekt.com/v1/users \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "secure-password",
+    "name": "John Doe"
+  }'
+```
+
+#### PUT /users/{id}
+
+Update user.
+
+```bash
+curl -X PUT https://api.protekt.com/v1/users/USER_ID \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Name",
+    "email": "updated@example.com"
+  }'
+```
+
+#### DELETE /users/{id}
+
+Delete user.
+
+```bash
+curl -X DELETE https://api.protekt.com/v1/users/USER_ID \
+  -H "Authorization: Bearer ACCESS_TOKEN"
+```
+
+### Organizations
+
+#### GET /organizations
+
+List organizations.
+
+```bash
+curl -H "Authorization: Bearer ACCESS_TOKEN" \
+  https://api.protekt.com/v1/organizations
+```
+
+#### POST /organizations
+
+Create organization.
+
+```bash
+curl -X POST https://api.protekt.com/v1/organizations \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Acme Corp",
+    "domain": "acme.com"
+  }'
+```
+
+### Multi-Factor Authentication
+
+#### POST /users/{id}/mfa/totp
+
+Enable TOTP for user.
+
+```bash
+curl -X POST https://api.protekt.com/v1/users/USER_ID/mfa/totp \
+  -H "Authorization: Bearer ACCESS_TOKEN"
+```
+
+#### POST /users/{id}/mfa/sms
+
+Send SMS verification code.
+
+```bash
+curl -X POST https://api.protekt.com/v1/users/USER_ID/mfa/sms \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+1234567890"
+  }'
+```
+
+#### POST /users/{id}/mfa/verify
+
+Verify MFA code.
+
+```bash
+curl -X POST https://api.protekt.com/v1/users/USER_ID/mfa/verify \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "method": "totp",
+    "code": "123456"
+  }'
+```
+
+## Error Responses
+
+All errors follow a consistent format:
+
+```json
+{
+  "error": "error_code",
+  "error_description": "Human readable error message",
+  "error_uri": "https://docs.protekt.com/errors/error_code"
+}
+```
+
+### Common Error Codes
+
+| Code | Description |
+|------|-------------|
+| `invalid_request` | Missing or invalid parameters |
+| `invalid_client` | Invalid client credentials |
+| `invalid_grant` | Invalid authorization code or refresh token |
+| `unauthorized_client` | Client not authorized for this grant type |
+| `unsupported_grant_type` | Grant type not supported |
+| `invalid_scope` | Invalid scope requested |
+| `access_denied` | User denied the request |
+| `server_error` | Internal server error |
+| `temporarily_unavailable` | Service temporarily unavailable |
+
+## Webhooks
+
+Configure webhooks to receive real-time events:
+
+```bash
+curl -X POST https://api.protekt.com/v1/webhooks \
+  -H "Authorization: Bearer ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-app.com/webhooks",
+    "events": ["user.created", "user.updated", "user.deleted"]
+  }'
+```
+
+### Webhook Events
+
+- `user.created` - New user created
+- `user.updated` - User updated
+- `user.deleted` - User deleted
+- `user.login` - User logged in
+- `user.logout` - User logged out
+- `mfa.enabled` - MFA enabled for user
+- `mfa.disabled` - MFA disabled for user
+
+## SDK Examples
+
+### Node.js
+
+```javascript
+import { Protekt } from '@protekt/sdk';
+
+const protekt = new Protekt({
+  domain: 'your-tenant.protekt.com',
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret'
+});
+
+// Get user
+const user = await protekt.users.get('user-id');
+
+// Create user
+const newUser = await protekt.users.create({
+  email: 'user@example.com',
+  password: 'secure-password',
+  name: 'John Doe'
+});
+```
+
+### Python
+
+```python
+from protekt import Protekt
+
+protekt = Protekt(
+    domain='your-tenant.protekt.com',
+    client_id='your-client-id',
+    client_secret='your-client-secret'
+)
+
+# Get user
+user = protekt.users.get('user-id')
+
+# Create user
+new_user = protekt.users.create({
+    'email': 'user@example.com',
+    'password': 'secure-password',
+    'name': 'John Doe'
+})
+```
+
+### Go
+
+```go
+package main
+
+import (
+    "github.com/protekt/protekt-go"
+)
+
+func main() {
+    client := protekt.NewClient(&protekt.Config{
+        Domain:       "your-tenant.protekt.com",
+        ClientID:     "your-client-id",
+        ClientSecret: "your-client-secret",
+    })
+
+    // Get user
+    user, err := client.Users.Get("user-id")
+    if err != nil {
+        panic(err)
+    }
+
+    // Create user
+    newUser, err := client.Users.Create(&protekt.User{
+        Email:    "user@example.com",
+        Password: "secure-password",
+        Name:     "John Doe",
+    })
+    if err != nil {
+        panic(err)
+    }
+}
+```
+
+## Support
+
+Need help with the API?
+
+- [API Documentation](https://docs.protekt.com/api)
+- [SDK Documentation](/reference/sdks)
+- [Postman Collection](/reference/postman-collection.json)
+- [Support](mailto:support@protekt.com) 

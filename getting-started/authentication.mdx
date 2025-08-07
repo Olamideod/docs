@@ -1,0 +1,186 @@
+---
+title: "Authentication"
+description: "Configure authentication flows and settings"
+---
+
+# Authentication Configuration
+
+Learn how to configure authentication flows, providers, and settings in Protekt.
+
+## Authentication Flows
+
+Protekt supports multiple authentication flows to suit different application types:
+
+### Authorization Code Flow (Recommended)
+
+Best for web applications with a backend server.
+
+```javascript
+const protekt = new Protekt({
+  domain: 'your-tenant.protekt.com',
+  clientId: 'your-client-id',
+  redirectUri: 'https://your-app.com/callback',
+  responseType: 'code'
+});
+```
+
+### Implicit Flow
+
+For single-page applications (SPAs) without a backend.
+
+```javascript
+const protekt = new Protekt({
+  domain: 'your-tenant.protekt.com',
+  clientId: 'your-client-id',
+  redirectUri: 'https://your-app.com/callback',
+  responseType: 'token'
+});
+```
+
+### PKCE Flow
+
+Enhanced security for public clients.
+
+```javascript
+const protekt = new Protekt({
+  domain: 'your-tenant.protekt.com',
+  clientId: 'your-client-id',
+  redirectUri: 'https://your-app.com/callback',
+  responseType: 'code',
+  codeChallengeMethod: 'S256'
+});
+```
+
+## Identity Providers
+
+Configure various identity providers for your application:
+
+### Social Login
+
+```javascript
+// Configure social providers
+const socialProviders = {
+  google: {
+    clientId: 'your-google-client-id',
+    scope: 'openid email profile'
+  },
+  github: {
+    clientId: 'your-github-client-id',
+    scope: 'read:user user:email'
+  }
+};
+```
+
+### Enterprise SSO
+
+```javascript
+// SAML configuration
+const samlConfig = {
+  idpEntityId: 'https://your-idp.com',
+  idpSsoUrl: 'https://your-idp.com/sso',
+  idpCert: 'your-idp-certificate',
+  spEntityId: 'https://your-app.protekt.com'
+};
+```
+
+### Custom Database
+
+```javascript
+// Custom database connection
+const dbConfig = {
+  type: 'mysql',
+  host: 'your-db-host',
+  database: 'your-db-name',
+  username: 'your-db-user',
+  password: 'your-db-password'
+};
+```
+
+## Multi-Factor Authentication
+
+Enable MFA for enhanced security:
+
+### TOTP Setup
+
+```javascript
+// Enable TOTP for users
+await protekt.enableMFA({
+  type: 'totp',
+  issuer: 'Your App',
+  algorithm: 'SHA1'
+});
+```
+
+### SMS Authentication
+
+```javascript
+// Configure SMS provider
+const smsConfig = {
+  provider: 'twilio',
+  accountSid: 'your-twilio-sid',
+  authToken: 'your-twilio-token',
+  fromNumber: '+1234567890'
+};
+```
+
+### WebAuthn
+
+```javascript
+// Enable WebAuthn for passwordless auth
+await protekt.enableWebAuthn({
+  rpName: 'Your App',
+  rpId: 'your-app.com',
+  userVerification: 'preferred'
+});
+```
+
+## Security Settings
+
+Configure security policies for your application:
+
+### Password Policies
+
+```javascript
+const passwordPolicy = {
+  minLength: 8,
+  requireUppercase: true,
+  requireLowercase: true,
+  requireNumbers: true,
+  requireSpecialChars: true,
+  preventCommonPasswords: true
+};
+```
+
+### Rate Limiting
+
+```javascript
+const rateLimits = {
+  loginAttempts: {
+    maxAttempts: 5,
+    windowMinutes: 15,
+    lockoutMinutes: 30
+  },
+  passwordReset: {
+    maxAttempts: 3,
+    windowMinutes: 60
+  }
+};
+```
+
+### Session Management
+
+```javascript
+const sessionConfig = {
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  rolling: true,
+  secure: true,
+  httpOnly: true,
+  sameSite: 'strict'
+};
+```
+
+## Next Steps
+
+- [First Integration](/tutorials/first-integration) - Build your first authentication flow
+- [Multi-Factor Authentication](/how-to-guides/enable-mfa) - Set up MFA for your users
+- [Single Sign-On](/how-to-guides/implement-sso) - Configure SSO with enterprise providers 
