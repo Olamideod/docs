@@ -1,184 +1,127 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Protekt Documentation",
+  "name": "Mint Starter Kit",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
     "dark": "#15803D"
   },
   "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Getting Started",
-        "groups": [
-          {
-            "group": "Introduction",
-            "pages": [
-              "landing-page",
-              "getting-started/overview",
-              "getting-started/quickstart",
-              "getting-started/authentication"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Tutorials",
-        "groups": [
-          {
-            "group": "Platform Integration",
-            "pages": [
-              "tutorials/first-integration",
-              "tutorials/secure-your-app",
-              "tutorials/mobile-app",
-              "tutorials/server-to-server",
-              "tutorials/b2b-organizations"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "How-to Guides",
-        "groups": [
-          {
-            "group": "Authentication",
-            "pages": [
-              "how-to-guides/send-magic-link",
-              "how-to-guides/implement-sso",
-              "how-to-guides/enable-mfa",
-              "how-to-guides/attack-protection"
-            ]
-          },
-          {
-            "group": "Authorization",
-            "pages": [
-              "how-to-guides/setup-rbac",
-              "how-to-guides/custom-claims",
-              "how-to-guides/hooks-and-rules"
-            ]
-          },
-          {
-            "group": "Migration",
-            "pages": [
-              "how-to-guides/migrate-from-auth0"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Explanation",
-        "groups": [
-          {
-            "group": "Concepts",
-            "pages": [
-              "explanation/jwt-vs-session",
-              "explanation/architecture-decisions",
-              "explanation/scopes-and-claims",
-              "explanation/multi-tenant"
-            ]
-          },
-          {
-            "group": "Compliance",
-            "pages": [
-              "explanation/compliance-guides/gdpr",
-              "explanation/compliance-guides/hipaa",
-              "explanation/compliance-guides/soc2"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Reference",
-        "groups": [
-          {
-            "group": "API Documentation",
-            "pages": [
-              "reference/redocusaurus",
-              "reference/openapi.yaml"
-            ]
-          },
-          {
-            "group": "SDKs",
-            "pages": [
-              "reference/sdks/node",
-              "reference/sdks/python",
-              "reference/sdks/go"
-            ]
-          },
-          {
-            "group": "Tools",
-            "pages": [
-              "reference/postman-collection.json"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Security",
-        "groups": [
-          {
-            "group": "Security Overview",
-            "pages": [
-              "security/overview"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Troubleshooting",
-        "groups": [
-          {
-            "group": "Common Issues",
-            "pages": [
-              "troubleshooting/common-errors",
-              "troubleshooting/status-embed"
-            ]
-          },
-          {
-            "group": "Error Pages",
-            "pages": [
-              "troubleshooting/error-pages/invalid-token",
-              "troubleshooting/error-pages/rate-limit",
-              "troubleshooting/error-pages/callback-mismatch"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Release Notes",
-        "groups": [
-          {
-            "group": "Releases",
-            "pages": [
-              "release-notes/index",
-              "release-notes/v1.2.0"
-            ]
-          }
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
+ "navigation": {
+  "tabs": [
+    {
+      "tab": "Guides",
+      "groups": [
         {
-          "anchor": "Dashboard",
-          "href": "https://dashboard.protekt.com",
-          "icon": "dashboard"
+          "group": "Getting Started",
+          "pages": [
+            "getting-started/overview",
+            "getting-started/quickstart",
+            "getting-started/authentication",
+            "getting-started/interactive-wizard"
+          ]
         },
         {
-          "anchor": "Support",
-          "href": "mailto:support@protekt.com",
-          "icon": "help"
+          "group": "Tutorials",
+          "pages": [
+            "tutorials/first-integration",
+            "tutorials/secure-your-app",
+            "tutorials/mobile-app",
+            "tutorials/server-to-server",
+            "tutorials/b2b-organizations"
+          ]
         },
         {
-          "anchor": "Status",
-          "href": "https://status.protekt.com",
-          "icon": "activity"
+          "group": "How-To Guides",
+          "pages": [
+            "how-to-guides/send-magic-link",
+            "how-to-guides/setup-rbac",
+            "how-to-guides/implement-sso",
+            "how-to-guides/migrate-from-auth0",
+            "how-to-guides/enable-mfa",
+            "how-to-guides/attack-protection",
+            "how-to-guides/custom-claims",
+            "how-to-guides/hooks-and-rules"
+          ]
+        },
+        {
+          "group": "Explanations",
+          "pages": [
+            "explanation/jwt-vs-session",
+            "explanation/architecture-decisions",
+            "explanation/scopes-and-claims",
+            "explanation/multi-tenant",
+            "explanation/compliance-guides/gdpr",
+            "explanation/compliance-guides/hipaa",
+            "explanation/compliance-guides/soc2"
+          ]
+        }
+      ]
+    },
+    {
+      "tab": "Reference",
+      "groups": [
+        {
+          "group": "API & SDKs",
+          "pages": [
+            "reference/redocusaurus",
+            "reference/postman-collection",
+            "reference/sdks/node",
+            "reference/sdks/python",
+            "reference/sdks/go"
+          ]
+        }
+      ]
+    },
+    {
+      "tab": "Security & Troubleshooting",
+      "groups": [
+        {
+          "group": "Security",
+          "pages": [
+            "security/overview"
+          ]
+        },
+        {
+          "group": "Troubleshooting",
+          "pages": [
+            "troubleshooting/common-errors",
+            "troubleshooting/status-embed",
+            "troubleshooting/error-pages/invalid-token",
+            "troubleshooting/error-pages/rate-limit",
+            "troubleshooting/error-pages/callback-mismatch"
+          ]
+        }
+      ]
+    },
+    {
+      "tab": "Updates",
+      "groups": [
+        {
+          "group": "Release Notes",
+          "pages": [
+            "release-notes/v1.2.0",
+            "release-notes/index"
+          ]
+        },
+        {
+          "group": "Changelog & Misc",
+          "pages": [
+            "changelog",
+            "faq",
+            "glossary"
+          ]
         }
       ]
     }
-  },
+  ],
+  "global": {
+    "anchors": [
+      
+    ]
+  }
+},
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
@@ -187,24 +130,20 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@protekt.com"
-      },
-      {
-        "label": "Status",
-        "href": "https://status.protekt.com"
+        "href": "mailto:hi@mintlify.com"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://dashboard.protekt.com"
+      "href": "https://dashboard.mintlify.com"
     }
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/protekt",
-      "twitter": "https://twitter.com/protekt",
-      "linkedin": "https://linkedin.com/company/protekt"
+      "x": "https://x.com/mintlify",
+      "github": "https://github.com/mintlify",
+      "linkedin": "https://linkedin.com/company/mintlify"
     }
   }
 }
