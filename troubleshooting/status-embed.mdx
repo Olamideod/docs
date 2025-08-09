@@ -1,0 +1,263 @@
+# Status Embed Troubleshooting
+
+This guide helps you troubleshoot common issues with Protekt's status embed functionality.
+
+## Common Issues
+
+### Status Embed Not Loading
+
+**Symptoms:**
+- Status embed shows "Loading..." indefinitely
+- Console shows network errors
+- Status page appears blank
+
+**Solutions:**
+
+1. **Check Network Connectivity**
+   ```javascript
+   // Test if the status API is reachable
+   fetch('https://status.protekt.com/api/v1/status')
+     .then(response => response.json())
+     .then(data => console.log('Status API working:', data))
+     .catch(error => console.error('Status API error:', error));
+   ```
+
+2. **Verify Embed Code**
+   ```html
+   <!-- Ensure the embed code is correct -->
+   <div id="protekt-status-embed"></div>
+   <script>
+     (function() {
+       var script = document.createElement('script');
+       script.src = 'https://status.protekt.com/embed.js';
+       script.async = true;
+       document.head.appendChild(script);
+     })();
+   </script>
+   ```
+
+3. **Check Domain Whitelist**
+   - Ensure your domain is whitelisted in the Protekt dashboard
+   - Contact support if you need to add your domain
+
+### Status Embed Styling Issues
+
+**Symptoms:**
+- Status embed doesn't match your site's design
+- Text is unreadable or overlapping
+- Embed appears too large or small
+
+**Solutions:**
+
+1. **Custom CSS Overrides**
+   ```css
+   /* Override default styles */
+   #protekt-status-embed {
+     font-family: 'Your Font', sans-serif;
+     color: #333;
+     background: #fff;
+     border-radius: 8px;
+     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+   }
+   
+   #protekt-status-embed .status-item {
+     padding: 12px;
+     border-bottom: 1px solid #eee;
+   }
+   ```
+
+2. **Responsive Design**
+   ```css
+   /* Make embed responsive */
+   #protekt-status-embed {
+     max-width: 100%;
+     width: 100%;
+   }
+   
+   @media (max-width: 768px) {
+     #protekt-status-embed {
+       font-size: 14px;
+     }
+   }
+   ```
+
+### Status Updates Not Reflecting
+
+**Symptoms:**
+- Status embed shows outdated information
+- Real-time updates not working
+- Cache issues
+
+**Solutions:**
+
+1. **Clear Browser Cache**
+   ```javascript
+   // Force refresh of status embed
+   function refreshStatusEmbed() {
+     const embed = document.getElementById('protekt-status-embed');
+     if (embed) {
+       embed.innerHTML = '';
+       // Re-initialize embed
+       window.ProtektStatusEmbed.init();
+     }
+   }
+   ```
+
+2. **Check Update Frequency**
+   ```javascript
+   // Configure update frequency
+   window.ProtektStatusEmbed = {
+     config: {
+       refreshInterval: 30000, // 30 seconds
+       showHistory: true,
+       maxIncidents: 5
+     }
+   };
+   ```
+
+## Advanced Configuration
+
+### Custom Status Embed
+
+```javascript
+// Custom status embed implementation
+class CustomStatusEmbed {
+  constructor(containerId, options = {}) {
+    this.container = document.getElementById(containerId);
+    this.options = {
+      apiUrl: 'https://status.protekt.com/api/v1',
+      refreshInterval: 30000,
+      ...options
+    };
+    this.init();
+  }
+
+  async init() {
+    await this.loadStatus();
+    this.startPolling();
+  }
+
+  async loadStatus() {
+    try {
+      const response = await fetch(`${this.options.apiUrl}/status`);
+      const data = await response.json();
+      this.render(data);
+    } catch (error) {
+      this.renderError(error);
+    }
+  }
+
+  render(data) {
+    this.container.innerHTML = `
+      <div class="status-header">
+        <h3>System Status</h3>
+        <span class="overall-status ${data.status}">${data.status}</span>
+      </div>
+      <div class="status-services">
+        ${data.services.map(service => `
+          <div class="service-item ${service.status}">
+            <span class="service-name">${service.name}</span>
+            <span class="service-status">${service.status}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  renderError(error) {
+    this.container.innerHTML = `
+      <div class="status-error">
+        <p>Unable to load status information</p>
+        <small>${error.message}</small>
+      </div>
+    `;
+  }
+
+  startPolling() {
+    setInterval(() => this.loadStatus(), this.options.refreshInterval);
+  }
+}
+
+// Usage
+new CustomStatusEmbed('protekt-status-embed', {
+  refreshInterval: 60000,
+  showIncidents: true
+});
+```
+
+### Status Webhook Integration
+
+```javascript
+// Webhook endpoint for status updates
+app.post('/webhooks/status', (req, res) => {
+  const { event, data } = req.body;
+  
+  switch (event) {
+    case 'incident.created':
+      notifyUsers(data);
+      break;
+    case 'incident.updated':
+      updateStatusEmbed(data);
+      break;
+    case 'incident.resolved':
+      clearNotifications(data);
+      break;
+  }
+  
+  res.status(200).json({ received: true });
+});
+
+function notifyUsers(incident) {
+  // Send notifications to users
+  console.log(`New incident: ${incident.title}`);
+}
+
+function updateStatusEmbed(incident) {
+  // Update status embed in real-time
+  const embed = document.getElementById('protekt-status-embed');
+  if (embed) {
+    // Update embed content
+  }
+}
+```
+
+## Debugging Tools
+
+### Status API Testing
+
+```bash
+# Test status API endpoints
+curl -X GET https://status.protekt.com/api/v1/status
+curl -X GET https://status.protekt.com/api/v1/incidents
+curl -X GET https://status.protekt.com/api/v1/components
+```
+
+### Browser Developer Tools
+
+```javascript
+// Debug status embed in console
+window.ProtektStatusEmbed = {
+  debug: true,
+  log: function(message) {
+    if (this.debug) {
+      console.log('[Protekt Status]', message);
+    }
+  }
+};
+```
+
+## Support Resources
+
+- **Status Page**: [https://status.protekt.com](https://status.protekt.com)
+- **API Documentation**: [https://docs.protekt.com/reference/status-api](https://docs.protekt.com/reference/status-api)
+- **Support Email**: support@protekt.com
+- **Community Forum**: [https://community.protekt.com](https://community.protekt.com)
+
+## Best Practices
+
+1. **Always include error handling** in your status embed implementation
+2. **Use appropriate refresh intervals** to balance real-time updates with performance
+3. **Test the embed** in different browsers and devices
+4. **Monitor embed performance** and adjust configuration as needed
+5. **Keep embed code updated** with the latest version
+6. **Provide fallback content** when status embed fails to load 

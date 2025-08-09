@@ -1,0 +1,457 @@
+# Callback Mismatch Error Troubleshooting
+
+This guide helps you resolve callback URL mismatch errors that occur during OAuth authentication flows in Protekt.
+
+## Understanding Callback Mismatch Errors
+
+### What is a Callback Mismatch?
+
+A callback mismatch occurs when the redirect URI (callback URL) used in an OAuth request doesn't match the registered callback URLs in your Protekt application configuration.
+
+### Error Response
+
+```json
+{
+  "error": "redirect_uri_mismatch",
+  "error_description": "The redirect URI provided does not match a pre-registered redirect URI for this application.",
+  "state": "optional-state-parameter"
+}
+```
+
+## Common Callback Mismatch Scenarios
+
+### Development vs Production URLs
+
+**Problem:**
+- Using `http://localhost:3000/callback` in development
+- But registered callback is `https://yourapp.com/callback`
+
+**Solutions:**
+
+1. **Register Multiple Callback URLs**
+   ```javascript
+   // In your Protekt application settings, register both URLs:
+   // - http://localhost:3000/callback (development)
+   // - https://yourapp.com/callback (production)
+   ```
+
+2. **Environment-Based Configuration**
+   ```javascript
+   // Configure callback URLs based on environment
+   const config = {
+     development: {
+       callbackUrl: 'http://localhost:3000/callback',
+       clientId: 'dev-client-id'
+     },
+     production: {
+       callbackUrl: 'https://yourapp.com/callback',
+       clientId: 'prod-client-id'
+     }
+   };
+
+   const environment = process.env.NODE_ENV || 'development';
+   const { callbackUrl, clientId } = config[environment];
+
+   // Use in OAuth flow
+   const authUrl = `https://protekt.com/oauth/authorize?` +
+     `client_id=${clientId}&` +
+     `redirect_uri=${encodeURIComponent(callbackUrl)}&` +
+     `response_type=code&` +
+     `scope=openid profile email`;
+   ```
+
+### Protocol Mismatch (HTTP vs HTTPS)
+
+**Problem:**
+- Registered callback: `https://yourapp.com/callback`
+- Requested callback: `http://yourapp.com/callback`
+
+**Solutions:**
+
+1. **Force HTTPS in Production**
+   ```javascript
+   // Express.js middleware to force HTTPS
+   const forceHTTPS = (req, res, next) => {
+     if (process.env.NODE_ENV === 'production' && !req.secure) {
+       return res.redirect(`https://${req.headers.host}${req.url}`);
+     }
+     next();
+   };
+
+   app.use(forceHTTPS);
+   ```
+
+2. **Environment-Specific Protocol**
+   ```javascript
+   const getCallbackUrl = () => {
+     const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+     const host = process.env.HOST || 'localhost:3000';
+     return `${protocol}://${host}/callback`;
+   };
+   ```
+
+### Port Number Mismatch
+
+**Problem:**
+- Registered callback: `http://localhost:3000/callback`
+- Requested callback: `http://localhost:8080/callback`
+
+**Solutions:**
+
+1. **Dynamic Port Detection**
+   ```javascript
+   // Detect port dynamically
+   const getCallbackUrl = () => {
+     const port = process.env.PORT || window.location.port || '3000';
+     const host = window.location.hostname || 'localhost';
+     return `http://${host}:${port}/callback`;
+   };
+   ```
+
+2. **Environment Variable Configuration**
+   ```javascript
+   // Use environment variables for configuration
+   const callbackUrl = process.env.CALLBACK_URL || 'http://localhost:3000/callback';
+   ```
+
+### Path Mismatch
+
+**Problem:**
+- Registered callback: `https://yourapp.com/auth/callback`
+- Requested callback: `https://yourapp.com/callback`
+
+**Solutions:**
+
+1. **Consistent Path Configuration**
+   ```javascript
+   // Define callback path consistently
+   const CALLBACK_PATH = '/auth/callback';
+   
+   const getCallbackUrl = () => {
+     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+     return `${baseUrl}${CALLBACK_PATH}`;
+   };
+   ```
+
+2. **Route Configuration**
+   ```javascript
+   // Express.js route configuration
+   app.get('/auth/callback', (req, res) => {
+     // Handle OAuth callback
+     const { code, state, error } = req.query;
+     
+     if (error) {
+       console.error('OAuth error:', error);
+       return res.redirect('/login?error=' + encodeURIComponent(error));
+     }
+     
+     // Exchange code for token
+     exchangeCodeForToken(code);
+   });
+   ```
+
+## OAuth Flow Implementation
+
+### Complete OAuth Implementation
+
+```javascript
+// Complete OAuth flow with proper callback handling
+class OAuthManager {
+  constructor(config) {
+    this.config = {
+      clientId: config.clientId,
+      clientSecret: config.clientSecret,
+      redirectUri: config.redirectUri,
+      scope: config.scope || 'openid profile email',
+      ...config
+    };
+  }
+
+  // Step 1: Generate authorization URL
+  generateAuthUrl(state = null) {
+    const params = new URLSearchParams({
+      client_id: this.config.clientId,
+      redirect_uri: this.config.redirectUri,
+      response_type: 'code',
+      scope: this.config.scope
+    });
+
+    if (state) {
+      params.append('state', state);
+    }
+
+    return `https://protekt.com/oauth/authorize?${params.toString()}`;
+  }
+
+  // Step 2: Handle callback and exchange code for token
+  async handleCallback(code, state = null) {
+    try {
+      const response = await fetch('https://protekt.com/oauth/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: this.config.clientId,
+          client_secret: this.config.clientSecret,
+          code: code,
+          redirect_uri: this.config.redirectUri
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Token exchange failed: ${error.error_description}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('OAuth callback error:', error);
+      throw error;
+    }
+  }
+
+  // Step 3: Get user information
+  async getUserInfo(accessToken) {
+    try {
+      const response = await fetch('https://protekt.com/oauth/userinfo', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get user info');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Get user info error:', error);
+      throw error;
+    }
+  }
+}
+
+// Usage
+const oauth = new OAuthManager({
+  clientId: 'your-client-id',
+  clientSecret: 'your-client-secret',
+  redirectUri: 'https://yourapp.com/auth/callback'
+});
+
+// Generate auth URL
+const authUrl = oauth.generateAuthUrl('random-state');
+window.location.href = authUrl;
+```
+
+### Express.js Callback Handler
+
+```javascript
+// Express.js callback handler
+app.get('/auth/callback', async (req, res) => {
+  const { code, state, error } = req.query;
+
+  // Handle OAuth errors
+  if (error) {
+    console.error('OAuth error:', error);
+    return res.redirect('/login?error=' + encodeURIComponent(error));
+  }
+
+  // Validate state parameter (CSRF protection)
+  if (state !== req.session.oauthState) {
+    console.error('State mismatch');
+    return res.redirect('/login?error=invalid_state');
+  }
+
+  try {
+    // Exchange code for token
+    const tokenData = await oauth.handleCallback(code, state);
+    
+    // Get user information
+    const userInfo = await oauth.getUserInfo(tokenData.access_token);
+    
+    // Store user session
+    req.session.user = userInfo;
+    req.session.accessToken = tokenData.access_token;
+    req.session.refreshToken = tokenData.refresh_token;
+    
+    // Redirect to dashboard
+    res.redirect('/dashboard');
+  } catch (error) {
+    console.error('Callback processing error:', error);
+    res.redirect('/login?error=callback_failed');
+  }
+});
+
+// Generate OAuth state and redirect
+app.get('/auth/login', (req, res) => {
+  const state = crypto.randomBytes(32).toString('hex');
+  req.session.oauthState = state;
+  
+  const authUrl = oauth.generateAuthUrl(state);
+  res.redirect(authUrl);
+});
+```
+
+## Debugging Callback Issues
+
+### Callback URL Validation
+
+```javascript
+// Validate callback URL format
+const validateCallbackUrl = (url) => {
+  try {
+    const parsed = new URL(url);
+    
+    // Check protocol
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return { valid: false, error: 'Invalid protocol' };
+    }
+    
+    // Check hostname
+    if (!parsed.hostname) {
+      return { valid: false, error: 'Missing hostname' };
+    }
+    
+    // Check path
+    if (!parsed.pathname || parsed.pathname === '/') {
+      return { valid: false, error: 'Missing callback path' };
+    }
+    
+    return { valid: true, parsed };
+  } catch (error) {
+    return { valid: false, error: 'Invalid URL format' };
+  }
+};
+
+// Usage
+const { valid, error, parsed } = validateCallbackUrl(callbackUrl);
+if (!valid) {
+  console.error('Invalid callback URL:', error);
+}
+```
+
+### Callback URL Comparison
+
+```javascript
+// Compare callback URLs (handles trailing slashes, etc.)
+const compareCallbackUrls = (url1, url2) => {
+  const normalizeUrl = (url) => {
+    const parsed = new URL(url);
+    return `${parsed.protocol}//${parsed.host}${parsed.pathname.replace(/\/$/, '')}`;
+  };
+  
+  return normalizeUrl(url1) === normalizeUrl(url2);
+};
+
+// Usage
+const registeredUrl = 'https://yourapp.com/callback';
+const requestedUrl = 'https://yourapp.com/callback/';
+
+if (!compareCallbackUrls(registeredUrl, requestedUrl)) {
+  console.error('Callback URL mismatch');
+}
+```
+
+### Debug Logging
+
+```javascript
+// Debug OAuth flow
+const debugOAuth = (req, res, next) => {
+  console.log('OAuth Debug Info:');
+  console.log('- Request URL:', req.url);
+  console.log('- Query params:', req.query);
+  console.log('- Headers:', req.headers);
+  console.log('- Environment:', process.env.NODE_ENV);
+  console.log('- Callback URL:', process.env.CALLBACK_URL);
+  
+  next();
+};
+
+// Apply to callback route
+app.get('/auth/callback', debugOAuth, async (req, res) => {
+  // ... callback handling
+});
+```
+
+## Common Fixes
+
+### 1. Update Application Configuration
+
+```javascript
+// In your Protekt dashboard, update the application settings:
+const applicationConfig = {
+  name: 'Your App',
+  clientId: 'your-client-id',
+  redirectUris: [
+    'http://localhost:3000/auth/callback',  // Development
+    'https://yourapp.com/auth/callback',    // Production
+    'https://staging.yourapp.com/auth/callback'  // Staging
+  ],
+  allowedOrigins: [
+    'http://localhost:3000',
+    'https://yourapp.com',
+    'https://staging.yourapp.com'
+  ]
+};
+```
+
+### 2. Environment-Specific Configuration
+
+```javascript
+// .env.development
+CALLBACK_URL=http://localhost:3000/auth/callback
+CLIENT_ID=dev-client-id
+
+// .env.production
+CALLBACK_URL=https://yourapp.com/auth/callback
+CLIENT_ID=prod-client-id
+
+// config.js
+const config = {
+  callbackUrl: process.env.CALLBACK_URL,
+  clientId: process.env.CLIENT_ID,
+  clientSecret: process.env.CLIENT_SECRET
+};
+```
+
+### 3. Dynamic Callback URL Generation
+
+```javascript
+// Generate callback URL dynamically
+const getCallbackUrl = () => {
+  const protocol = window.location.protocol;
+  const host = window.location.host;
+  const path = '/auth/callback';
+  
+  return `${protocol}//${host}${path}`;
+};
+
+// Use in OAuth flow
+const authUrl = `https://protekt.com/oauth/authorize?` +
+  `client_id=${clientId}&` +
+  `redirect_uri=${encodeURIComponent(getCallbackUrl())}&` +
+  `response_type=code&` +
+  `scope=openid profile email`;
+```
+
+## Best Practices
+
+1. **Always register multiple callback URLs** for different environments
+2. **Use environment variables** for configuration
+3. **Validate callback URLs** before making OAuth requests
+4. **Implement proper state parameter** for CSRF protection
+5. **Handle OAuth errors gracefully** with user-friendly messages
+6. **Log callback issues** for debugging
+7. **Test OAuth flow** in all environments
+8. **Use HTTPS in production** for security
+9. **Keep callback URLs consistent** across your application
+10. **Monitor OAuth errors** in your application logs
+
+## Support Resources
+
+- **OAuth Documentation**: [https://docs.protekt.com/reference/oauth](https://docs.protekt.com/reference/oauth)
+- **Application Configuration**: [https://dashboard.protekt.com/applications](https://dashboard.protekt.com/applications)
+- **Support Email**: support@protekt.com
+- **Community Forum**: [https://community.protekt.com](https://community.protekt.com) 
