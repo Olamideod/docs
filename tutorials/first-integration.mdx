@@ -1,332 +1,304 @@
 ---
 title: "First Integration"
-description: "Build your first authentication integration with Protekt"
+description: "Complete tutorial: from zero to production-ready authentication"
 ---
 
-# First Integration
+# Build Your First Login Flow
 
-This tutorial will guide you through building your first authentication integration with Protekt. We'll create a simple web application that allows users to sign up, log in, and access protected content.
+You'll build a complete login system in 15 minutes. By the end, you'll have signup, signin, user profiles, and protected routes working seamlessly together.
 
-## Prerequisites
+## Goal of This Tutorial
 
-- Node.js 16+ installed
-- A Protekt account (sign up at [dashboard.protekt.com](https://dashboard.protekt.com))
-- Basic knowledge of JavaScript/React
+Authentication touches every part of your application. This tutorial walks you through building a React app with Express backend that handles:
+- **User registration and login** - Secure signup/signin flows
+- **Protected dashboard pages** - Routes that require authentication  
+- **User profile management** - View and update user data
+- **Secure logout flow** - Clean session termination
 
-## Step 1: Create Your Application
-
-First, create a new React application:
-
-```bash
-npx create-react-app protekt-demo
-cd protekt-demo
-npm install @protekt/sdk
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant A as Your App
+    participant P as Protekt
+    
+    U->>A: Click "Sign In"
+    A->>P: Redirect to Protekt
+    P->>U: Show login form
+    U->>P: Enter credentials
+    P->>A: Return with auth code
+    A->>P: Exchange code for token
+    P->>A: Return user data
+    A->>U: Show dashboard
 ```
 
-## Step 2: Configure Protekt
+<Tip>This flow follows OAuth 2.0 standards, making it secure and compatible with enterprise requirements.</Tip>
 
-1. Go to your [Protekt Dashboard](https://dashboard.protekt.com)
-2. Create a new application
-3. Note your `domain`, `clientId`, and `redirectUri`
+## Setup Project & Install SDK
 
-## Step 3: Initialize Protekt SDK
+Modern authentication requires both frontend and backend coordination. We'll create a clean separation that scales well.
 
-Create a configuration file for Protekt:
+**Why this architecture?** Your frontend handles user interactions while your backend manages sensitive operations like token validation.
 
-```javascript
-// src/config/protekt.js
-import { Protekt } from '@protekt/sdk';
-
-export const protekt = new Protekt({
-  domain: 'your-tenant.protekt.com',
-  clientId: 'your-client-id',
-  redirectUri: 'http://localhost:3000/callback',
-  responseType: 'code'
-});
+<CodeGroup>
+```bash Project Setup
+mkdir my-auth-app && cd my-auth-app
+mkdir frontend backend
 ```
 
-## Step 4: Create Authentication Components
+```bash Frontend Setup
+cd frontend
+npx create-react-app . --template typescript
+npm install @protekt/react
+```
 
-### Login Component
+```bash Backend Setup
+cd ../backend
+npm init -y
+npm install express @protekt/node cors dotenv
+```
+</CodeGroup>
 
-```jsx
-// src/components/Login.js
-import React from 'react';
-import { protekt } from '../config/protekt';
+Configure your environment variables:
 
-const Login = () => {
-  const handleLogin = async () => {
-    try {
-      await protekt.login();
-    } catch (error) {
-      console.error('Login failed:', error);
-    }
-  };
+```bash .env
+PROTEKT_CLIENT_ID=your_client_id_here
+PROTEKT_CLIENT_SECRET=your_client_secret_here  
+PROTEKT_REDIRECT_URI=http://localhost:3000/callback
+```
 
+<Warning>Never commit secrets to version control. Use `.env` files locally and secure vaults in production.</Warning>
+
+## Add Sign-Up / Sign-In Buttons
+
+The `ProtektProvider` component wraps your entire app, managing authentication state automatically. Think of it as a smart container that knows whether users are logged in.
+
+<CodeGroup>
+```tsx AuthProvider.tsx
+import { ProtektProvider } from '@protekt/react';
+
+export default function AuthProvider({ children }) {
+  return (
+    <ProtektProvider
+      clientId={process.env.REACT_APP_PROTEKT_CLIENT_ID}
+      redirectUri="http://localhost:3000/callback"
+    >
+      {children}
+    </ProtektProvider>
+  );
+}
+```
+
+```tsx Login.tsx
+import { useProtekt } from '@protekt/react';
+
+export default function Login() {
+  const { user, login, isLoading, error } = useProtekt();
+  
+  if (isLoading) return <div>Checking authentication...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  if (user) return <div>Welcome back, {user.email}!</div>;
+  
   return (
     <div className="login-container">
-      <h2>Welcome to Our App</h2>
-      <p>Sign in to access your account</p>
-      <button onClick={handleLogin} className="login-button">
+      <h1>Welcome to My App</h1>
+      <button onClick={() => login()}>
         Sign In with Protekt
+      </button>
+      <button onClick={() => login({ screen: 'signup' })}>
+        Create Account  
       </button>
     </div>
   );
-};
-
-export default Login;
+}
 ```
+</CodeGroup>
 
-### Callback Handler
+## Handle Callback
 
-```jsx
-// src/components/Callback.js
-import React, { useEffect } from 'react';
-import { protekt } from '../config/protekt';
-import { useNavigate } from 'react-router-dom';
+The callback page is where OAuth magic happens. When users complete authentication on Protekt's servers, they're redirected back to your app with a special code.
 
-const Callback = () => {
+**Why callbacks matter:** This step exchanges the temporary code for permanent tokens. It's like trading a restaurant ticket for your actual meal.
+
+<CodeGroup>
+```tsx Callback.tsx
+import { useProtekt } from '@protekt/react';
+import { useEffect } from 'react';
+
+export default function Callback() {
+  const { handleCallback, isLoading } = useProtekt();
   const navigate = useNavigate();
-
+  
   useEffect(() => {
-    const handleCallback = async () => {
+    const processCallback = async () => {
       try {
-        await protekt.handleCallback();
+        await handleCallback();
         navigate('/dashboard');
       } catch (error) {
-        console.error('Callback failed:', error);
         navigate('/login');
       }
     };
-
-    handleCallback();
-  }, [navigate]);
-
-  return (
-    <div className="callback-container">
-      <p>Completing sign in...</p>
-    </div>
-  );
-};
-
-export default Callback;
+    processCallback();
+  }, []);
+  
+  return <div>{isLoading ? 'Completing sign in...' : 'Redirecting...'}</div>;
+}
 ```
 
-### Protected Dashboard
+```javascript server.js
+import { Protekt } from '@protekt/node';
 
-```jsx
-// src/components/Dashboard.js
-import React, { useState, useEffect } from 'react';
-import { protekt } from '../config/protekt';
+const protekt = new Protekt({
+  clientId: process.env.PROTEKT_CLIENT_ID,
+  clientSecret: process.env.PROTEKT_CLIENT_SECRET
+});
 
-const Dashboard = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userData = await protekt.getUser();
-        setUser(userData);
-      } catch (error) {
-        console.error('Failed to load user:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUser();
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await protekt.logout();
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
-
-  if (loading) {
-    return <div>Loading...</div>;
+app.get('/auth/callback', async (req, res) => {
+  try {
+    const { user, tokens } = await protekt.handleCallback(req.query.code);
+    res.json({ success: true, user, tokens });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
+});
+```
+</CodeGroup>
 
+## Fetch User Data
+
+Once authenticated, your app needs user information. The profile component demonstrates how to securely fetch data using access tokens.
+
+**Token-based requests** include the user's access token in the Authorization header. This proves the request comes from an authenticated user.
+
+<CodeGroup>
+```tsx UserProfile.tsx
+export default function UserProfile() {
+  const { user, getAccessToken } = useProtekt();
+  const [profile, setProfile] = useState(null);
+  
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = await getAccessToken();
+      const response = await fetch('/api/profile', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setProfile(data.user);
+    };
+    
+    if (user) fetchProfile();
+  }, [user]);
+  
+  return profile ? (
+    <div className="profile">
+      <img src={profile.avatar} alt="Profile" />
+      <h2>{profile.name}</h2>
+      <p>{profile.email}</p>
+    </div>
+  ) : <div>Loading profile...</div>;
+}
+```
+
+```javascript profile.js
+router.get('/profile', protekt.requireAuth, (req, res) => {
+  // req.user populated by Protekt middleware
+  res.json({
+    user: {
+      id: req.user.id,
+      email: req.user.email,
+      name: req.user.name,
+      avatar: req.user.picture
+    }
+  });
+});
+```
+</CodeGroup>
+
+## Protect Routes
+
+Route protection ensures only authenticated users access sensitive pages. The `ProtectedRoute` wrapper component makes this elegant and reusable.
+
+<CodeGroup>
+```tsx ProtectedRoute.tsx  
+export default function ProtectedRoute({ children, requiredPermission }) {
+  const { user, isLoading, hasPermission } = useProtekt();
+  
+  if (isLoading) return <div>Checking access...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  
+  if (requiredPermission && !hasPermission(requiredPermission)) {
+    return <div>Access denied</div>;
+  }
+  
+  return <>{children}</>;
+}
+```
+
+```tsx Dashboard.tsx
+export default function Dashboard() {
+  const { user, logout } = useProtekt();
+  
   return (
     <div className="dashboard">
-      <h1>Welcome, {user?.name}!</h1>
-      <div className="user-info">
-        <p>Email: {user?.email}</p>
-        <p>User ID: {user?.sub}</p>
-      </div>
-      <button onClick={handleLogout} className="logout-button">
-        Sign Out
-      </button>
+      <header>
+        <h1>Dashboard</h1>
+        <button onClick={logout}>Sign Out</button>
+      </header>
+      <main>
+        <h2>Welcome back, {user?.name}!</h2>
+        <UserProfile />
+      </main>
     </div>
   );
-};
-
-export default Dashboard;
-```
-
-## Step 5: Set Up Routing
-
-Install React Router and set up your routes:
-
-```bash
-npm install react-router-dom
-```
-
-```jsx
-// src/App.js
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Login from './components/Login';
-import Callback from './components/Callback';
-import Dashboard from './components/Dashboard';
-import ProtectedRoute from './components/ProtectedRoute';
-
-function App() {
-  return (
-    <Router>
-      <div className="App">
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/callback" element={<Callback />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Login />} />
-        </Routes>
-      </div>
-    </Router>
-  );
-}
-
-export default App;
-```
-
-### Protected Route Component
-
-```jsx
-// src/components/ProtectedRoute.js
-import React, { useState, useEffect } from 'react';
-import { protekt } from '../config/protekt';
-
-const ProtectedRoute = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const authenticated = await protekt.isAuthenticated();
-        setIsAuthenticated(authenticated);
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isAuthenticated) {
-    window.location.href = '/login';
-    return null;
-  }
-
-  return children;
-};
-
-export default ProtectedRoute;
-```
-
-## Step 6: Add Styling
-
-Add some basic CSS to make it look good:
-
-```css
-/* src/App.css */
-.login-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  text-align: center;
-}
-
-.login-button {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.dashboard {
-  padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.user-info {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 4px;
-  margin: 20px 0;
-}
-
-.logout-button {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
 }
 ```
+</CodeGroup>
 
-## Step 7: Test Your Integration
+## Test Locally
 
-1. Start your development server:
-   ```bash
-   npm start
-   ```
+Testing authentication requires running both servers simultaneously. Each handles different responsibilities in the auth flow.
 
-2. Navigate to `http://localhost:3000`
-3. Click "Sign In with Protekt"
-4. Complete the authentication flow
-5. You should be redirected to the dashboard
+<CodeGroup>
+```bash backend
+cd backend && npm run dev
+# Runs on http://localhost:3001
+```
 
-## Next Steps
+```bash frontend
+cd frontend && npm start
+# Runs on http://localhost:3000
+```
+</CodeGroup>
 
-Now that you have a basic integration working, explore these advanced features:
+**Test these critical flows:**
+1. **Registration Flow** - New users can create accounts
+2. **Login Flow** - Existing users can sign in  
+3. **Route Protection** - Unauthenticated users can't access `/dashboard`
+4. **Profile Access** - Logged-in users see their information
+5. **Logout Flow** - Users can securely sign out
 
-- [Multi-Factor Authentication](/how-to-guides/enable-mfa) - Add TOTP, SMS, or WebAuthn
-- [Role-Based Access Control](/how-to-guides/setup-rbac) - Implement user roles and permissions
-- [Social Login](/tutorials/secure-your-app) - Add Google, GitHub, and other social providers
-- [Custom Claims](/how-to-guides/custom-claims) - Add custom user attributes
+<Tip>Open browser dev tools to watch network requests and see tokens being exchanged.</Tip>
 
-## Troubleshooting
+## Wrap-Up and Next Steps
 
-If you encounter issues:
+**Congratulations!** You built a production-ready authentication system covering the complete user lifecycle. Your app now handles registration, login, profile management, route protection, and secure logout.
 
-1. **Redirect URI mismatch**: Ensure your redirect URI in the dashboard matches exactly
-2. **CORS errors**: Make sure your domain is configured correctly
-3. **Authentication failures**: Check your client ID and domain settings
+**What you accomplished:**
+- OAuth 2.0 compliant authentication
+- Secure token handling
+- Protected routes and APIs
+- User profile management
 
-For more help, see our [Troubleshooting Guide](/troubleshooting/common-errors). 
+<CardGroup cols={2}>
+<Card title="Secure Your App" icon="shield" href="/tutorials/secure-your-app">
+Add MFA, session expiry, and advanced security
+</Card>
+<Card title="Add Organizations" icon="users" href="/tutorials/b2b-organizations">  
+Build team management and role-based access
+</Card>
+<Card title="Mobile Integration" icon="mobile" href="/tutorials/mobile-app">
+iOS and Android authentication
+</Card>
+<Card title="Enterprise SSO" icon="building" href="/how-to-guides/implement-sso">
+Connect Google, Microsoft, Okta
+</Card>
+</CardGroup>

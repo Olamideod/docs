@@ -1,523 +1,292 @@
 ---
-title: "Mobile App Integration"
-description: "Integrate Protekt authentication into React Native and Flutter apps"
+title: "Mobile App Integration "
+description: "Add secure authentication to React Native and Flutter apps"
 ---
 
-# Mobile App Integration
+# Mobile App Integration Overview
 
-Learn how to integrate Protekt authentication into your mobile applications using React Native and Flutter.
+Mobile authentication requires different approaches than web apps. Users expect biometric login, offline capabilities, and seamless app-to-app transitions. This tutorial covers React Native and Flutter integration with secure token storage and native platform features.
 
-## React Native Integration
+## Mobile Auth Challenges
 
-### Prerequisites
+Mobile apps face unique security and UX challenges that web apps don't encounter:
 
-- React Native development environment set up
-- Protekt account and application configured
-- iOS Simulator or Android Emulator
+**Security concerns:**
+- Apps can be decompiled and reverse-engineered
+- Tokens must survive app restarts and updates
+- Biometric authentication integration
+- Deep link hijacking prevention
 
-### Step 1: Install Dependencies
+**User experience expectations:**
+- Instant app launches with cached authentication
+- Biometric unlock (Face ID, Touch ID, fingerprint)
+- Seamless handoff from web to mobile
+- Offline access to cached user data
 
-```bash
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant A as Mobile App
+    participant S as System Browser
+    participant P as Protekt
+    
+    U->>A: Tap "Sign In"
+    A->>S: Open browser with auth URL
+    S->>P: Load Protekt login
+    U->>P: Enter credentials
+    P->>S: Redirect with auth code
+    S->>A: Deep link callback
+    A->>P: Exchange code for tokens
+    P->>A: Return user data
+    A->>A: Store in secure storage
+```
+
+<Info>Mobile OAuth uses **Authorization Code + PKCE** flow for enhanced security against app impersonation.</Info>
+
+## Supported Frameworks
+
+Protekt provides native SDKs for the most popular mobile development frameworks, each optimized for platform-specific features.
+
+**React Native**: JavaScript-based development with native performance. Great for teams already using React for web applications.
+
+**Flutter**: Dart-based cross-platform framework with excellent performance and growing ecosystem.
+
+Both frameworks support:
+- Secure keychain/keystore integration
+- Biometric authentication
+- Deep linking
+- Background token refresh
+- Offline-first architecture
+
+<Warning>Never use AsyncStorage or SharedPreferences for tokens—always use secure storage solutions.</Warning>
+
+## React Native Setup
+
+React Native apps need additional dependencies for secure storage and browser integration. The setup process ensures tokens are encrypted and biometrics work properly.
+
+<CodeGroup>
+```bash Installation
 npm install @protekt/react-native
-npm install react-native-url-polyfill
+npm install react-native-keychain
+npm install @react-native-async-storage/async-storage
+npm install react-native-app-auth
+
+# iOS additional setup
+cd ios && pod install
 ```
 
-### Step 2: Configure iOS (iOS only)
+```tsx AuthProvider.tsx
+import { ProtektProvider } from '@protekt/react-native';
+import * as Keychain from 'react-native-keychain';
 
-Add the following to your `ios/YourApp/Info.plist`:
+const keychainOptions = {
+  accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_CURRENT_SET,
+  authenticatePrompt: 'Authenticate to access your account',
+  service: 'MyApp',
+};
 
-```xml
-<key>CFBundleURLTypes</key>
-<array>
-  <dict>
-    <key>CFBundleURLName</key>
-    <string>protekt</string>
-    <key>CFBundleURLSchemes</key>
-    <array>
-      <string>your-app-scheme</string>
-    </array>
-  </dict>
-</array>
+export default function AuthProvider({ children }) {
+  return (
+    <ProtektProvider
+      clientId="your_mobile_client_id"
+      redirectUri="myapp://auth/callback"
+      storage={{
+        getItem: async (key) => {
+          const credentials = await Keychain.getInternetCredentials(key);
+          return credentials ? credentials.password : null;
+        },
+        setItem: async (key, value) => {
+          await Keychain.setInternetCredentials(key, 'user', value, keychainOptions);
+        },
+        removeItem: async (key) => {
+          await Keychain.resetInternetCredentials(key);
+        }
+      }}
+    >
+      {children}
+    </ProtektProvider>
+  );
+}
 ```
 
-### Step 3: Configure Android (Android only)
+```tsx LoginScreen.tsx
+import { useProtekt } from '@protekt/react-native';
+import { Alert, TouchableOpacity, Text } from 'react-native';
 
-Add to your `android/app/src/main/AndroidManifest.xml`:
+export default function LoginScreen() {
+  const { user, login, loginWithBiometrics, isLoading } = useProtekt();
 
-```xml
-<activity>
-  <intent-filter>
-    <action android:name="android.intent.action.VIEW" />
-    <category android:name="android.intent.category.DEFAULT" />
-    <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="your-app-scheme" />
-  </intent-filter>
-</activity>
-```
-
-### Step 4: Initialize Protekt
-
-```javascript
-// src/config/protekt.js
-import { Protekt } from '@protekt/react-native';
-
-export const protekt = new Protekt({
-  domain: 'your-tenant.protekt.com',
-  clientId: 'your-client-id',
-  redirectUri: 'your-app-scheme://callback',
-  responseType: 'code'
-});
-```
-
-### Step 5: Create Authentication Components
-
-```jsx
-// src/components/Login.js
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { protekt } from '../config/protekt';
-
-const Login = ({ navigation }) => {
-  const handleLogin = async () => {
+  const handleBiometricLogin = async () => {
     try {
-      await protekt.login();
+      await loginWithBiometrics();
     } catch (error) {
-      console.error('Login failed:', error);
+      Alert.alert('Biometric Login Failed', error.message);
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Our App</Text>
-      <Text style={styles.subtitle}>Sign in to access your account</Text>
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Sign In with Protekt</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: '#007bff',
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
-
-export default Login;
-```
-
-### Step 6: Handle Authentication Callback
-
-```jsx
-// src/components/Callback.js
-import React, { useEffect } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
-import { protekt } from '../config/protekt';
-
-const Callback = ({ navigation }) => {
-  useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        await protekt.handleCallback();
-        navigation.replace('Dashboard');
-      } catch (error) {
-        console.error('Callback failed:', error);
-        navigation.replace('Login');
-      }
-    };
-
-    handleCallback();
-  }, [navigation]);
-
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size="large" color="#007bff" />
-      <Text style={{ marginTop: 20 }}>Completing sign in...</Text>
-    </View>
-  );
-};
-
-export default Callback;
-```
-
-### Step 7: Protected Dashboard
-
-```jsx
-// src/components/Dashboard.js
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { protekt } from '../config/protekt';
-
-const Dashboard = ({ navigation }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userData = await protekt.getUser();
-        setUser(userData);
-      } catch (error) {
-        console.error('Failed to load user:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUser();
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await protekt.logout();
-      navigation.replace('Login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
-      </View>
-    );
+  if (user) {
+    return <Text>Welcome back, {user.name}!</Text>;
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome, {user?.name}!</Text>
-      <View style={styles.userInfo}>
-        <Text>Email: {user?.email}</Text>
-        <Text>User ID: {user?.sub}</Text>
-      </View>
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Sign Out</Text>
+      <TouchableOpacity 
+        style={styles.loginButton} 
+        onPress={() => login()}
+        disabled={isLoading}
+      >
+        <Text>Sign In with Protekt</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity 
+        style={styles.biometricButton}
+        onPress={handleBiometricLogin}
+      >
+        <Text>Use Face ID / Touch ID</Text>
       </TouchableOpacity>
     </View>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  userInfo: {
-    backgroundColor: '#f8f9fa',
-    padding: 20,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  logoutButton: {
-    backgroundColor: '#dc3545',
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  logoutButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
-
-export default Dashboard;
+}
 ```
+</CodeGroup>
 
-## Flutter Integration
+## Flutter Implementation
 
-### Prerequisites
+Flutter's approach uses platform channels to access native biometric APIs and secure storage. The implementation leverages Flutter's excellent async support.
 
-- Flutter SDK installed
-- Protekt account and application configured
-- iOS Simulator or Android Emulator
-
-### Step 1: Add Dependencies
-
-Add to your `pubspec.yaml`:
-
-```yaml
+<CodeGroup>
+```yaml pubspec.yaml
 dependencies:
-  flutter:
-    sdk: flutter
   protekt_flutter: ^1.0.0
-  url_launcher: ^6.0.0
+  flutter_secure_storage: ^9.0.0
+  local_auth: ^2.1.0
+  app_links: ^3.4.0
+
+dev_dependencies:
+  flutter_launcher_icons: ^0.13.0
 ```
 
-### Step 2: Configure iOS (iOS only)
-
-Add to your `ios/Runner/Info.plist`:
-
-```xml
-<key>CFBundleURLTypes</key>
-<array>
-  <dict>
-    <key>CFBundleURLName</key>
-    <string>protekt</string>
-    <key>CFBundleURLSchemes</key>
-    <array>
-      <string>your-app-scheme</string>
-    </array>
-  </dict>
-</array>
-```
-
-### Step 3: Configure Android (Android only)
-
-Add to your `android/app/src/main/AndroidManifest.xml`:
-
-```xml
-<activity>
-  <intent-filter>
-    <action android:name="android.intent.action.VIEW" />
-    <category android:name="android.intent.category.DEFAULT" />
-    <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="your-app-scheme" />
-  </intent-filter>
-</activity>
-```
-
-### Step 4: Initialize Protekt
-
-```dart
-// lib/config/protekt.dart
+```dart auth_service.dart
 import 'package:protekt_flutter/protekt_flutter.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
 
-class ProtektConfig {
-  static final Protekt protekt = Protekt(
-    domain: 'your-tenant.protekt.com',
-    clientId: 'your-client-id',
-    redirectUri: 'your-app-scheme://callback',
-    responseType: 'code',
+class AuthService {
+  static final _protekt = ProtektFlutter(
+    clientId: 'your_flutter_client_id',
+    redirectUri: 'myapp://auth/callback',
   );
-}
-```
 
-### Step 5: Create Authentication Screens
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+    ),
+    iOptions: IOSOptions(
+      accessibility: IOSAccessibility.first_unlock_this_device,
+    ),
+  );
 
-```dart
-// lib/screens/login_screen.dart
-import 'package:flutter/material.dart';
-import '../config/protekt.dart';
+  static Future<User?> getCurrentUser() async {
+    try {
+      final token = await _storage.read(key: 'access_token');
+      if (token != null) {
+        return await _protekt.getUserFromToken(token);
+      }
+    } catch (e) {
+      print('Failed to get current user: $e');
+    }
+    return null;
+  }
 
-class LoginScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Welcome to Our App',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Sign in to access your account',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-            SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  await ProtektConfig.protekt.login();
-                } catch (error) {
-                  print('Login failed: $error');
-                }
-              },
-              child: Text('Sign In with Protekt'),
-              style: ElevatedButton.styleFrom(
-                primary: Colors.blue,
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-              ),
-            ),
-          ],
-        ),
+  static Future<void> login() async {
+    try {
+      final result = await _protekt.login();
+      await _storage.write(key: 'access_token', value: result.accessToken);
+      await _storage.write(key: 'refresh_token', value: result.refreshToken);
+    } catch (e) {
+      throw Exception('Login failed: $e');
+    }
+  }
+
+  static Future<bool> loginWithBiometrics() async {
+    final localAuth = LocalAuthentication();
+    
+    final isAvailable = await localAuth.canCheckBiometrics;
+    if (!isAvailable) return false;
+
+    final isAuthenticated = await localAuth.authenticate(
+      localizedReason: 'Authenticate to access your account',
+      options: const AuthenticationOptions(
+        biometricOnly: true,
+        stickyAuth: true,
       ),
     );
+
+    if (isAuthenticated) {
+      final token = await _storage.read(key: 'access_token');
+      return token != null;
+    }
+    
+    return false;
   }
 }
 ```
 
-### Step 6: Handle Callback
-
-```dart
-// lib/screens/callback_screen.dart
+```dart login_screen.dart
 import 'package:flutter/material.dart';
-import '../config/protekt.dart';
+import 'auth_service.dart';
 
-class CallbackScreen extends StatefulWidget {
+class LoginScreen extends StatefulWidget {
   @override
-  _CallbackScreenState createState() => _CallbackScreenState();
+  _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _CallbackScreenState extends State<CallbackScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _handleCallback();
-  }
+class _LoginScreenState extends State<LoginScreen> {
+  bool _isLoading = false;
 
-  Future<void> _handleCallback() async {
+  Future<void> _handleLogin() async {
+    setState(() => _isLoading = true);
+    
     try {
-      await ProtektConfig.protekt.handleCallback();
+      await AuthService.login();
       Navigator.pushReplacementNamed(context, '/dashboard');
-    } catch (error) {
-      print('Callback failed: $error');
-      Navigator.pushReplacementNamed(context, '/login');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 20),
-            Text('Completing sign in...'),
-          ],
-        ),
-      ),
-    );
-  }
-}
-```
-
-### Step 7: Protected Dashboard
-
-```dart
-// lib/screens/dashboard_screen.dart
-import 'package:flutter/material.dart';
-import '../config/protekt.dart';
-
-class DashboardScreen extends StatefulWidget {
-  @override
-  _DashboardScreenState createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends State<DashboardScreen> {
-  Map<String, dynamic>? user;
-  bool loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUser();
-  }
-
-  Future<void> _loadUser() async {
+  Future<void> _handleBiometricLogin() async {
     try {
-      final userData = await ProtektConfig.protekt.getUser();
-      setState(() {
-        user = userData;
-        loading = false;
-      });
-    } catch (error) {
-      print('Failed to load user: $error');
-      setState(() {
-        loading = false;
-      });
-    }
-  }
-
-  Future<void> _handleLogout() async {
-    try {
-      await ProtektConfig.protekt.logout();
-      Navigator.pushReplacementNamed(context, '/login');
-    } catch (error) {
-      print('Logout failed: $error');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) {
-      return Scaffold(
-        body: Center(child: Text('Loading...')),
+      final success = await AuthService.loginWithBiometrics();
+      if (success) {
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Biometric login failed')),
       );
     }
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Dashboard'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: _handleLogout,
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(20),
+      body: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Welcome, ${user?['name']}!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _handleLogin,
+              child: Text(_isLoading ? 'Signing in...' : 'Sign In'),
             ),
-            SizedBox(height: 20),
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Email: ${user?['email']}'),
-                  SizedBox(height: 10),
-                  Text('User ID: ${user?['sub']}'),
-                ],
-              ),
+            TextButton.icon(
+              onPressed: _handleBiometricLogin,
+              icon: Icon(Icons.fingerprint),
+              label: Text('Use Biometrics'),
             ),
           ],
         ),
@@ -526,27 +295,202 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 ```
+</CodeGroup>
 
-## Testing Your Mobile Integration
+## Deep Linking and Callbacks
 
-1. **React Native**: Run `npx react-native run-ios` or `npx react-native run-android`
-2. **Flutter**: Run `flutter run`
+Mobile OAuth requires deep links to return users to your app after authentication. Proper configuration prevents URL hijacking and ensures smooth user experience.
 
-## Platform-Specific Considerations
+<CodeGroup>
+```xml android/app/src/main/AndroidManifest.xml
+<activity
+    android:name=".MainActivity"
+    android:exported="true"
+    android:launchMode="singleTop"
+    android:theme="@style/LaunchTheme">
+    
+    <!-- Regular app launch -->
+    <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+    </intent-filter>
+    
+    <!-- OAuth callback -->
+    <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="myapp" android:host="auth" />
+    </intent-filter>
+</activity>
+```
 
-### iOS
-- Use Safari View Controller for authentication
-- Handle deep linking properly
-- Test on both simulator and device
+```xml ios/Runner/Info.plist
+<key>CFBundleURLTypes</key>
+<array>
+    <dict>
+        <key>CFBundleURLName</key>
+        <string>myapp.auth</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>myapp</string>
+        </array>
+    </dict>
+</array>
 
-### Android
-- Use Chrome Custom Tabs for authentication
-- Handle app state changes
-- Test on different Android versions
+<key>LSApplicationQueriesSchemes</key>
+<array>
+    <string>https</string>
+    <string>http</string>
+</array>
+```
+</CodeGroup>
+
+**Deep link security best practices:**
+- Use app-specific URL schemes (`myapp://` not `https://`)
+- Validate all incoming deep link parameters
+- Implement PKCE for additional security
+- Handle edge cases (app not installed, multiple apps with same scheme)
+
+<Tip>Test deep links on physical devices—simulators don't always handle URL schemes correctly.</Tip>
+
+## Token Storage and Security
+
+Mobile apps must protect tokens from extraction by malicious apps or device compromise. Both platforms provide secure storage APIs that integrate with hardware security modules.
+
+**iOS Keychain Services**: Hardware-backed encryption with biometric access controls. Tokens survive app deletion and device restarts.
+
+**Android Keystore**: Hardware security module integration with biometric unlock. Encrypted storage that's isolated per app.
+
+<CodeGroup>
+```tsx SecureStorage.tsx
+import * as Keychain from 'react-native-keychain';
+import TouchID from 'react-native-touch-id';
+
+class SecureTokenStorage {
+  private static SERVICE_NAME = 'MyApp_Tokens';
+
+  static async storeTokens(accessToken: string, refreshToken: string) {
+    const biometryType = await TouchID.isSupported();
+    
+    await Keychain.setInternetCredentials(
+      this.SERVICE_NAME,
+      'tokens',
+      JSON.stringify({ accessToken, refreshToken }),
+      {
+        accessControl: biometryType 
+          ? Keychain.ACCESS_CONTROL.BIOMETRY_CURRENT_SET
+          : Keychain.ACCESS_CONTROL.DEVICE_PASSCODE,
+        authenticatePrompt: 'Authenticate to access your tokens',
+      }
+    );
+  }
+
+  static async getTokens(): Promise<{accessToken: string, refreshToken: string} | null> {
+    try {
+      const credentials = await Keychain.getInternetCredentials(this.SERVICE_NAME);
+      if (credentials) {
+        return JSON.parse(credentials.password);
+      }
+    } catch (error) {
+      console.warn('Failed to retrieve tokens:', error);
+    }
+    return null;
+  }
+
+  static async clearTokens() {
+    await Keychain.resetInternetCredentials(this.SERVICE_NAME);
+  }
+}
+```
+
+```dart secure_storage.dart
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
+
+class SecureTokenStorage {
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+      keyCipherAlgorithm: KeyCipherAlgorithm.RSA_ECB_PKCS1Padding,
+      storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
+    ),
+    iOptions: IOSOptions(
+      accessibility: IOSAccessibility.first_unlock_this_device,
+    ),
+  );
+
+  static Future<void> storeTokens(String accessToken, String refreshToken) async {
+    await _storage.write(key: 'access_token', value: accessToken);
+    await _storage.write(key: 'refresh_token', value: refreshToken);
+    await _storage.write(key: 'token_timestamp', value: DateTime.now().toIso8601String());
+  }
+
+  static Future<Map<String, String>?> getTokens() async {
+    final accessToken = await _storage.read(key: 'access_token');
+    final refreshToken = await _storage.read(key: 'refresh_token');
+    
+    if (accessToken != null && refreshToken != null) {
+      return {
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+      };
+    }
+    return null;
+  }
+
+  static Future<void> clearTokens() async {
+    await _storage.deleteAll();
+  }
+}
+```
+</CodeGroup>
+
+## Testing on Device
+
+Mobile authentication testing requires physical devices or realistic simulators. Network conditions, app switching, and biometric sensors behave differently than web environments.
+
+**Testing checklist:**
+-  Login flow on slow networks
+-  App backgrounding during OAuth flow  
+-  Token refresh when app resumes
+-  Biometric authentication on various devices
+-  Deep link handling from various apps
+-  Offline behavior with cached tokens
+
+<Warning>Always test on the oldest devices your app supports—performance varies significantly across hardware generations.</Warning>
+
+## Production Considerations
+
+Mobile apps in production face additional challenges around app store policies, certificate management, and user privacy expectations.
+
+**App store requirements:**
+- OAuth redirect URIs must be registered with Protekt
+- Privacy policy must explain biometric data usage
+- Apps using biometrics need usage descriptions
+- Background processing limitations affect token refresh
+
+**User privacy:**
+- Request biometric permissions explicitly
+- Explain why authentication is required
+- Provide fallback for users without biometrics
+- Respect system-level privacy settings
 
 ## Next Steps
 
-- [Multi-Factor Authentication](/how-to-guides/enable-mfa) - Add biometric authentication
-- [Biometric Authentication](/tutorials/secure-your-app) - Implement fingerprint/face ID
-- [Offline Support](/tutorials/secure-your-app) - Handle offline scenarios
-- [Push Notifications](/tutorials/secure-your-app) - Security alerts and MFA prompts 
+You've successfully integrated mobile authentication with secure token storage, biometric unlock, and proper deep linking. Your mobile app now provides enterprise-grade security with excellent user experience.
+
+<CardGroup cols={2}>
+<Card title="Server-to-Server Auth" icon="server" href="/tutorials/server-to-server">
+API authentication for mobile backends
+</Card>
+<Card title="B2B Organizations" icon="building" href="/tutorials/b2b-organizations">
+Team management in mobile apps
+</Card>
+<Card title="Security Best Practices" icon="shield" href="/security/best-practices">
+Advanced mobile security patterns
+</Card>
+<Card title="Push Notifications" icon="bell" href="/how-to-guides/push-notifications">
+Authenticated push messaging
+</Card>
+</CardGroup>

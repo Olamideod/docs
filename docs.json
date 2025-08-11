@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "Protekt Documentation",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#2563EB",
+    "light": "#3B82F6",
+    "dark": "#1E40AF"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -16,10 +16,9 @@
           {
             "group": "Getting Started",
             "pages": [
-              "getting-started/overview",
-              "getting-started/quickstart",
-              "getting-started/authentication",
-              "getting-started/interactive-wizard"
+             "introduction",
+             "getting-started/overview",
+             "getting-started/quickstart"
             ]
           },
           {
@@ -38,71 +37,63 @@
         "tab": "Feature Guide",
         "groups": [
           {
-            "group": "How-To Guides",
-            "pages": [
-              "how-to-guides/enable-mfa",
-              "how-to-guides/send-magic-link",
-              "how-to-guides/setup-rbac",
-              "how-to-guides/implement-sso",
-              "how-to-guides/migrate-from-auth0",
-              "how-to-guides/attack-protection",
-              "how-to-guides/custom-claims",
-              "how-to-guides/hooks-and-rules"
-            ]
-          },
-          {
-            "group": "Explanations",
-            "pages": [
-              "explanation/jwt-vs-session",
-              "explanation/architecture-decisions",
-              "explanation/scopes-and-claims",
-              "explanation/multi-tenant",
-              "explanation/compliance-guides/gdpr",
-              "explanation/compliance-guides/hipaa",
-              "explanation/compliance-guides/soc2"
-            ]
-          },
-          {
-            "group": "API & SDKs",
-            "pages": [
-              "reference/redocusaurus",
-              "reference/postman-collection",
-              "reference/sdks/node",
-              "reference/sdks/python",
-              "reference/sdks/go"
-            ]
-          },
-          {
-            "group": "Security",
-            "pages": [
-              "security/overview"
-            ]
-          },
-          {
-            "group": "Troubleshooting",
-            "pages": [
-              "troubleshooting/common-errors",
-              "troubleshooting/status-embed",
-              "troubleshooting/error-pages/invalid-token",
-              "troubleshooting/error-pages/rate-limit",
-              "troubleshooting/error-pages/callback-mismatch"
-            ]
-          },
-          {
-            "group": "Miscellaneous",
-            "pages": [
-              "misc/changelog",
-              "misc/faq",
-              "misc/glossary"
-            ]
-          }
+      "group": "Guides",
+      "pages": [
+        "how-to-guides/enable-mfa",
+        "how-to-guides/send-magic-link",
+        "how-to-guides/setup-rbac", 
+        "how-to-guides/implement-sso",
+        "how-to-guides/migrate-from-auth0"
+      ]
+    },
+    {
+      "group": "Concepts",
+      "pages": [
+        "explanation/jwt-vs-session",
+        "explanation/architecture-decisions"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "reference/api-overview",
+        "reference/authentication",
+        "reference/users",
+        "reference/organizations"
+      ]
+    },
+    {
+      "group": "SDKs",
+      "pages": [
+        "sdks/javascript",
+        "sdks/node",
+        "sdks/python",
+        "sdks/go"
+      ]
+    },
+    {
+      "group": "Security",
+      "pages": [
+        "security/overview",
+        "security/best-practices"
+      ]
+    },
+    {
+      "group": "Support",
+      "pages": [
+        "troubleshooting/common-errors",
+        "troubleshooting/debugging-guide",
+        "faq",
+        "glossary"
+      ]
+    }
         ]
       }
     ]
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/dark.png",
+    "dark": "/logo/light.png"
   },
   "navbar": {
     "links": [

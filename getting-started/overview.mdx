@@ -1,70 +1,263 @@
 ---
 title: "Overview"
-description: "Learn about Protekt's authentication and authorization platform"
-
+description: "Complete overview of Protekt's authentication capabilities and architecture"
 ---
 
-# What is Protekt?
+# What You Can Build with Protekt
 
-Protekt is a comprehensive authentication and authorization platform designed to secure modern applications. Whether you're building web applications, mobile apps, or APIs, Protekt provides the tools you need to implement robust security without the complexity.
+You're five minutes away from production-ready auth. Build everything from simple login screens to enterprise SSO with one platform.
+
+## What Protekt Enables
+
+**SaaS Login Systems** - Add user registration, login, and password reset in minutes.
+
+**Enterprise SSO Integration** - Connect Google Workspace, Microsoft, Okta, and any SAML provider.
+
+**Multi-Factor Authentication** - Add TOTP, SMS, and biometric auth with built-in recovery options.
+
+**B2B Multi-Tenant Auth** - Create organizations and manage team permissions automatically.
 
 ## Key Features
 
-###  Multi-Factor Authentication
-- **TOTP (Time-based One-Time Password)**: Google Authenticator, Authy, and other TOTP apps
-- **SMS Authentication**: One-time codes sent via SMS
-- **WebAuthn**: Passwordless authentication using biometrics and security keys
+**JWT-First Architecture** - Stateless tokens with auto-refresh and custom claims.
 
-###  Enterprise SSO
-- **SAML 2.0**: Connect with enterprise identity providers
-- **OAuth 2.0**: Social login and third-party integrations
-- **OIDC**: Modern OpenID Connect implementation
+**Session Management** - Secure server-side sessions with Redis backing.
 
-###  Security Features
-- **Brute Force Protection**: Automatic rate limiting and account lockouts
-- **Breached Password Detection**: Check against known compromised passwords
-- **Attack Monitoring**: Real-time threat detection and alerts
+**Organization Management** - Built-in multi-tenancy with team invites and role assignments.
 
-###  User Management
-- **Role-Based Access Control (RBAC)**: Fine-grained permissions
-- **Multi-Tenant Support**: B2B organization management
-- **Custom Claims**: Extensible user attributes
+**Real-Time Webhooks** - Get notified when users sign up or suspicious logins occur.
 
-## Architecture
+**Global Performance** - Sub-200ms token validation worldwide.
 
-Protekt follows a modern, cloud-native architecture:
+## Auth Flows
 
+<Tabs>
+<Tab title="Standard Login">
+
+```javascript  server.js
+import { Protekt } from '@protekt/node';
+
+// Redirect to login
+app.get('/login', (req, res) => {
+  const loginUrl = protekt.getLoginUrl({
+    redirectUri: 'https://yourapp.com/callback'
+  });
+  res.redirect(loginUrl);
+});
+
+// Handle callback
+app.get('/callback', async (req, res) => {
+  const { user, tokens } = await protekt.handleCallback(req.query.code);
+  req.session.user = user;
+  res.redirect('/dashboard');
+});
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Your App      │    │    Protekt      │    │   Identity      │
-│                 │◄──►│   Platform      │◄──►│   Providers     │
-│  (Web/Mobile)   │    │                 │    │  (SAML/OAuth)   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+
+</Tab>
+<Tab title="Magic Link">
+
+```javascript  auth.js
+// Send magic link
+app.post('/auth/magic-link', async (req, res) => {
+  await protekt.sendMagicLink({
+    email: req.body.email,
+    redirectTo: 'https://yourapp.com/dashboard'
+  });
+  res.json({ sent: true });
+});
 ```
 
-## Getting Started
+</Tab>
+<Tab title="SSO Integration">
 
-Choose your path to get started:
+```javascript  sso.js
+// Enterprise SSO redirect
+app.get('/sso/:domain', async (req, res) => {
+  const ssoUrl = await protekt.getSSOUrl({
+    domain: req.params.domain,
+    redirectUri: 'https://yourapp.com/sso/callback'
+  });
+  res.redirect(ssoUrl);
+});
+```
 
-<Columns cols={2}>
-  <Card
-    title="Quickstart"
-    icon="rocket"
-    href="/getting-started/quickstart"
-  >
-    Get up and running in 5 minutes with our interactive wizard.
-  </Card>
-  <Card
-    title="Authentication Setup"
-    icon="key"
-    href="/getting-started/authentication"
-  >
-    Learn about authentication flows and configuration.
-  </Card>
-</Columns>
+</Tab>
+</Tabs>
+
+## Teams & Organizations
+
+Handle complex B2B auth patterns with zero setup:
+
+```javascript  organizations.js
+// Create organization
+const org = await protekt.organizations.create({
+  name: 'Acme Corp',
+  domain: 'acme.com',
+  settings: { requireMFA: true }
+});
+
+// Invite team members
+await protekt.organizations.inviteUser({
+  organizationId: org.id,
+  email: 'john@acme.com',
+  role: 'admin'
+});
+
+// Check permissions
+const hasAccess = await protekt.checkPermission(
+  req.user.id, 
+  req.params.orgId, 
+  'users:delete'
+);
+```
+
+## Roles & Permissions
+
+Build granular access control in minutes:
+
+```javascript  rbac.js
+// Define custom roles
+const roles = {
+  admin: ['users:*', 'billing:*', 'settings:*'],
+  manager: ['users:read', 'users:invite'],
+  member: ['users:read']
+};
+
+// Protect API routes
+app.use('/api/admin', protekt.requirePermission('admin:access'));
+```
+
+## Secure Sessions
+
+Choose JWT tokens or server-side sessions:
+
+<Tabs>
+<Tab title="JWT Tokens">
+
+```javascript  jwt-auth.js
+// Validate JWT middleware
+app.use('/api', protekt.validateJWT);
+
+// Access user from token
+app.get('/api/profile', (req, res) => {
+  res.json({
+    user: req.user,
+    permissions: req.user.permissions,
+    organization: req.user.organization
+  });
+});
+```
+
+</Tab>
+<Tab title="Server Sessions">
+
+```javascript  sessions.js
+// Session middleware
+app.use(protekt.sessionMiddleware);
+
+// Revoke all sessions
+app.post('/api/logout-everywhere', async (req, res) => {
+  await protekt.revokeAllSessions(req.user.id);
+  res.json({ success: true });
+});
+```
+
+</Tab>
+</Tabs>
+
+## Architecture Overview
+
+Protekt handles auth complexity while integrating seamlessly with your stack.
+
+```mermaid
+graph TD
+    subgraph Frontend ["🖥️ Frontend"]
+        React["⚛️ React"]
+        Mobile["📱 Mobile"]
+        Vue["🟢 Vue"]
+    end
+
+    subgraph Protekt ["🛡️ Protekt Authentication"]
+        Auth["🔐 Auth Service"]
+        JWT["🎟️ JWT Tokens"]
+        Orgs["🏬 Organizations"]
+    end
+
+    subgraph Backend ["⚙️ Backend"]
+        API["🚀 APIs"]
+        DB["🗄️ Database"]
+    end
+
+    subgraph Providers ["🌐 Identity Providers"]
+        Google["🔵 Google"]
+        Microsoft["🟦 Microsoft"]
+        SAML["📄 SAML/SSO"]
+    end
+
+    Frontend -->|🔄 Login Request| Auth
+    Auth -->|✅ Tokens| Frontend
+    Providers --> Auth
+    Frontend -->|🎟️ Send Token| API
+    API -->|🔍 Validate| JWT
+    API --> DB
+
+    classDef frontendStyle fill:#f093fb,stroke:#f5576c,stroke-width:2px,color:#fff
+    classDef protektStyle fill:#4facfe,stroke:#00f2fe,stroke-width:3px,color:#fff
+    classDef backendStyle fill:#43e97b,stroke:#38f9d7,stroke-width:2px,color:#fff
+    classDef providerStyle fill:#fa709a,stroke:#fee140,stroke-width:2px,color:#fff
+    
+    class Frontend frontendStyle  
+    class Protekt protektStyle
+    class Backend backendStyle
+    class Providers providerStyle
+```
+
+**How It Works:**
+1. Your app redirects to Protekt for login
+2. Users authenticate with their preferred method  
+3. Protekt returns secure tokens to your app
+4. You validate tokens and access user data
+
+## SDKs & APIs
+
+First-class SDKs for every platform:
+
+**Frontend** - React, Vue, Angular, React Native, Flutter
+**Backend** - Node.js, Python, Go, PHP  
+**Mobile** - iOS, Android native SDKs
+**API** - Complete REST API for custom integrations
+
+View all [SDK documentation](../sdks/javascript) and [API reference](../reference/api-overview).
+
+## Compliance & Security
+
+**SOC 2 Type II Certified** with annual security audits and continuous monitoring.
+
+**Privacy Ready** - GDPR and CCPA compliance with user data export and deletion APIs.
+
+**Enterprise Security** - End-to-end encryption, zero-trust architecture, and 24/7 monitoring.
+
+**Industry Standards** - OAuth 2.0, SAML 2.0, WebAuthn, and FIDO2 support.
+
+## Deployment & Hosting Model
+
+**Cloud-Native** - Runs on AWS with 99.9% uptime SLA and auto-scaling.
+
+**Global Edge Network** - Auth endpoints in 15+ regions for sub-200ms response times.
+
+**High Availability** - Multi-region redundancy with automatic failover.
+
+<Tip>All infrastructure is managed for you. No servers to maintain or scale.</Tip>
 
 ## Next Steps
 
-- [First Integration](/tutorials/first-integration) - Build your first authentication flow
-- [Secure Your App](/tutorials/secure-your-app) - Best practices for security
-- [API Reference](/reference/redocusaurus) - Complete API documentation 
+Ready to add auth to your app? Pick your path:
+
+<CardGroup cols={2}>
+<Card title="5-Minute Quickstart" icon="rocket" href="/getting-started/quickstart">
+Get login working right now
+</Card>
+<Card title="Complete Tutorial" icon="book" href="/tutorials/first-integration">
+Build full auth step-by-step
+</Card>
+</CardGroup>
