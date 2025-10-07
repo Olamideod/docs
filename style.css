@@ -1,5 +1,15 @@
 :root {
-  --hover-bg: rgba(13, 84, 239, 0.747); /* subtle hover using primary */
+  /* Typography */
+  --heading-weight: 800;
+  --subheading-weight: 400;
+  --body-weight: 200;
+}
+
+/* ==================
+   Centered Tabs
+   ================== */
+[role="tablist"] {
+  justify-content: center !important;
 }
 
 .sidebar-item a:hover {
@@ -51,6 +61,7 @@
 .fade-in {
   animation: fadeIn var(--transition-base) ease-out;
 }
+
 
 /* ==================
    Responsive Design

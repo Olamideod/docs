@@ -6,10 +6,9 @@ description: "Add authentication to any JavaScript app in under 5 minutes"
 
 Add secure authentication to React, Vue, Angular, or vanilla JavaScript applications. The Protekt JavaScript SDK handles OAuth flows, token management, and session persistence automatically.
 
----
 
 ## Installation
-
+Run these commands on your terminal to install protekt javascript sdk
 <CodeGroup>
 
 ```bash npm
@@ -26,13 +25,12 @@ yarn add @protekt/javascript
 
 </CodeGroup>
 
----
 
 ## Quick start
 
 Get authentication running in three steps: initialize, login, and check status.
 
-### Initialize the SDK
+#### Initialize the SDK
 
 ```javascript
 import Protekt from '@protekt/javascript';
@@ -49,7 +47,7 @@ await protekt.init();
 Store your `clientId` in environment variables (`.env` files). Never commit credentials to version control.
 </Tip>
 
-### Implement Login
+#### Implement Login
 
 ```javascript
 // Trigger login flow
@@ -64,7 +62,7 @@ const handleLogin = async () => {
 };
 ```
 
-### Handle the Callback
+#### Handle the Callback
 
 ```javascript
 // On your /callback route
@@ -81,7 +79,7 @@ const handleCallback = async () => {
 };
 ```
 
----
+After following the 3 steps, you will see a welcome message on the dashboard.
 
 ## Authentication methods
 Check if User is Logged In
