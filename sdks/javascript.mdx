@@ -1,0 +1,432 @@
+---
+title: "JavaScript SDK"
+sidebarTitle: "JavaScript"
+description: "Add authentication to any JavaScript app in under 5 minutes"
+---
+
+Add secure authentication to React, Vue, Angular, or vanilla JavaScript applications. The Protekt JavaScript SDK handles OAuth flows, token management, and session persistence automatically.
+
+---
+
+## Installation
+
+<CodeGroup>
+
+```bash npm
+npm install @protekt/javascript
+```
+
+```bash yarn
+yarn add @protekt/javascript
+```
+
+```html CDN
+<script src="https://cdn.protekt.com/js/protekt.min.js"></script>
+```
+
+</CodeGroup>
+
+---
+
+## Quick start
+
+Get authentication running in three steps: initialize, login, and check status.
+
+### Initialize the SDK
+
+```javascript
+import Protekt from '@protekt/javascript';
+
+const protekt = new Protekt({
+  clientId: 'pk_live_your_client_id',
+  redirectUri: window.location.origin + '/callback'
+});
+
+await protekt.init();
+```
+
+<Tip>
+Store your `clientId` in environment variables (`.env` files). Never commit credentials to version control.
+</Tip>
+
+### Implement Login
+
+```javascript
+// Trigger login flow
+const handleLogin = async () => {
+  try {
+    await protekt.login({
+      returnTo: '/dashboard'
+    });
+  } catch (error) {
+    console.error('Login failed:', error.message);
+  }
+};
+```
+
+### Handle the Callback
+
+```javascript
+// On your /callback route
+const handleCallback = async () => {
+  try {
+    const result = await protekt.handleCallback();
+    
+    if (result.success) {
+      window.location.href = result.returnTo || '/dashboard';
+    }
+  } catch (error) {
+    console.error('Authentication failed:', error.message);
+  }
+};
+```
+
+---
+
+## Authentication methods
+Check if User is Logged In
+
+```javascript
+const isAuthenticated = await protekt.isAuthenticated();
+
+if (isAuthenticated) {
+  const user = await protekt.getUser();
+  console.log('Welcome back,', user.name);
+}
+```
+
+### Get current user
+The code is used to get a current user
+```javascript current-user
+const user = await protekt.getUser();
+
+console.log(user.email);     // [email protected]
+console.log(user.name);      // Jane Doe
+console.log(user.roles);     // ['admin', 'user']
+```
+
+### Listen for auth changes
+
+React to login/logout events anywhere in your app:
+
+```javascript
+protekt.onAuthChange((user) => {
+  if (user) {
+    console.log('User logged in:', user.email);
+    showDashboard();
+  } else {
+    console.log('User logged out');
+    showLoginPage();
+  }
+});
+```
+
+### Logout
+Setup a logout function
+
+```javascript
+const handleLogout = async () => {
+  await protekt.logout();
+  window.location.href = '/';
+};
+```
+
+---
+
+## Framework examples
+
+#### React Integration
+
+```jsx
+import { useState, useEffect } from 'react';
+import Protekt from '@protekt/javascript';
+
+const protekt = new Protekt({
+  clientId: process.env.REACT_APP_PROTEKT_CLIENT_ID,
+  redirectUri: window.location.origin + '/callback'
+});
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      await protekt.init();
+      
+      if (await protekt.isAuthenticated()) {
+        setUser(await protekt.getUser());
+      }
+      
+      setLoading(false);
+    };
+    
+    initAuth();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+
+  return user ? (
+    <div>
+      <h1>Welcome, {user.name}</h1>
+      <button onClick={() => protekt.logout().then(() => setUser(null))}>
+        Logout
+      </button>
+    </div>
+  ) : (
+    <button onClick={() => protekt.login()}>Login</button>
+  );
+}
+```
+
+#### Vue integration
+Copy this code to integrate vue
+
+```vue 
+<template>
+  <div>
+    <div v-if="loading">Loading...</div>
+    <div v-else-if="user">
+      <h1>Welcome, {{ user.name }}</h1>
+      <button @click="logout">Logout</button>
+    </div>
+    <button v-else @click="login">Login</button>
+  </div>
+</template>
+
+<script>
+import Protekt from '@protekt/javascript';
+
+export default {
+  data() {
+    return {
+      user: null,
+      loading: true,
+      protekt: null
+    };
+  },
+
+  async mounted() {
+    this.protekt = new Protekt({
+      clientId: process.env.VUE_APP_PROTEKT_CLIENT_ID,
+      redirectUri: window.location.origin + '/callback'
+    });
+
+    await this.protekt.init();
+    
+    if (await this.protekt.isAuthenticated()) {
+      this.user = await this.protekt.getUser();
+    }
+    
+    this.loading = false;
+  },
+
+  methods: {
+    login() {
+      this.protekt.login();
+    },
+    
+    async logout() {
+      await this.protekt.logout();
+      this.user = null;
+    }
+  }
+};
+</script>
+```
+
+---
+
+## Making authenticated requests
+
+Add Auth headers to API calls
+
+```javascript
+const makeAuthenticatedRequest = async (url, options = {}) => {
+  const token = await protekt.getAccessToken();
+  
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  return response.json();
+};
+
+// Usage
+const data = await makeAuthenticatedRequest('/api/user/profile');
+```
+
+### Handle token expiration
+
+The SDK automatically refreshes expired tokens, but you can handle 401 errors:
+
+```javascript
+const apiCall = async (url) => {
+  try {
+    return await makeAuthenticatedRequest(url);
+  } catch (error) {
+    if (error.status === 401) {
+      // Token expired, redirect to login
+      await protekt.login({ returnTo: window.location.pathname });
+    }
+    throw error;
+  }
+};
+```
+
+---
+
+## Route protection
+
+This code is used to protect private routes
+
+```javascript privacy-routes
+const requireAuth = async () => {
+  const isAuthenticated = await protekt.isAuthenticated();
+  
+  if (!isAuthenticated) {
+    protekt.login({ returnTo: window.location.pathname });
+    return false;
+  }
+  
+  return true;
+};
+
+// Before rendering protected component
+if (await requireAuth()) {
+  renderDashboard();
+}
+```
+
+### Role-based acess control
+Implement rbac
+```javascript rbac
+const requireRole = async (requiredRole) => {
+  const isAuth = await protekt.isAuthenticated();
+  
+  if (!isAuth) {
+    protekt.login({ returnTo: window.location.pathname });
+    return false;
+  }
+  
+  const user = await protekt.getUser();
+  return user.roles?.includes(requiredRole);
+};
+
+// Usage
+if (await requireRole('admin')) {
+  renderAdminPanel();
+} else {
+  showAccessDenied();
+}
+```
+
+---
+
+## Error handling
+
+Handle common authentication errors gracefully:
+
+```javascript
+try {
+  await protekt.login();
+} catch (error) {
+  switch (error.code) {
+    case 'NETWORK_ERROR':
+      showNotification('Connection failed. Check your internet.');
+      break;
+      
+    case 'INVALID_CREDENTIALS':
+      showNotification('Invalid email or password.');
+      break;
+      
+    case 'MFA_REQUIRED':
+      // Redirect to MFA challenge
+      window.location.href = error.mfa_challenge_url;
+      break;
+      
+    case 'ACCOUNT_LOCKED':
+      showNotification('Account locked. Contact support.');
+      break;
+      
+    default:
+      console.error('Authentication error:', error);
+      showNotification('Login failed. Please try again.');
+  }
+}
+```
+
+<Warning>
+The SDK automatically manages token storage and refresh. Never manually handle JWT tokens or store them in localStorage.
+</Warning>
+
+
+## Configuration options
+
+Basic Configuration 
+
+```javascript
+const protekt = new Protekt({
+  clientId: 'pk_live_your_client_id',
+  redirectUri: 'https://yourapp.com/callback'
+});
+```
+
+## TypeScript support
+
+Full TypeScript definitions included for type-safe development:
+
+```typescript
+import Protekt, { User, ProtektConfig, AuthError } from '@protekt/javascript';
+
+const config: ProtektConfig = {
+  clientId: process.env.PROTEKT_CLIENT_ID!,
+  redirectUri: window.location.origin + '/callback',
+  enablePKCE: true
+};
+
+const protekt = new Protekt(config);
+
+// Type-safe user access
+const user: User = await protekt.getUser();
+console.log(user.email);  // TypeScript knows this is a string
+
+// Type-safe error handling
+try {
+  await protekt.login();
+} catch (error) {
+  if (error instanceof AuthError) {
+    console.error(error.code, error.message);
+  }
+}
+```
+
+## Troubleshooting
+Common issues encoutered when integrating the sdk
+
+**Login redirects to wrong URL**
+- Verify `redirectUri` matches exactly in your Protekt dashboard
+- Ensure the callback route is registered in your app
+
+**"Invalid client" error**
+- Check your `clientId` is correct
+- Verify your app is enabled in the Protekt dashboard
+
+**Token refresh fails**
+- Ensure `autoRefresh: true` in configuration
+- Check network connectivity
+- Verify refresh tokens haven't been revoked
+
+**User data is stale**
+- Call `await protekt.getUser(true)` to force refresh
+- Check if `onAuthChange` listener is set up correctly
+
+<Info>
+For more troubleshooting help, see the [Common Errors Guide](/troubleshooting/common-errors).
+</Info>
+

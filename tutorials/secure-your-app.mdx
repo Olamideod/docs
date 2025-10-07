@@ -1,11 +1,11 @@
 ---
 title: "Secure Your App"
-description: "Add enterprise-grade security to your authentication system"
+description: "Add enterprise grade security to your authentication system"
 ---
 
 # Add Security to Your App
 
-Your authentication works—now let's make it bulletproof. Enterprise applications need layers of security beyond basic login. This tutorial adds session management, multi-factor authentication, token validation, and secure deployment practices.
+Your authentication works, now let's make it bulletproof. Enterprise applications need layers of security beyond basic login. This tutorial adds session management, multi-factor authentication, token validation, and secure deployment practices.
 
 ## Why Security Matters
 
@@ -16,6 +16,9 @@ Authentication vulnerabilities are expensive. A single compromised session can e
 - **Multi-factor authentication** - TOTP and SMS verification  
 - **JWT validation** - Proper token verification on every request
 - **HTTPS enforcement** - Encrypted data transmission
+
+
+## Architecture Overview
 
 ```mermaid
 graph TD
@@ -28,7 +31,7 @@ graph TD
     F --> G[Monitor Activity]
 ```
 
-<Info>Security is about **defense in depth**—multiple layers working together to protect your users.</Info>
+<Info>Security is about **defense in depth** multiple layers working together to protect your users.</Info>
 
 ## Add Session Expiry
 
@@ -99,7 +102,7 @@ export const validateSession = async (req, res, next) => {
 ```
 </CodeGroup>
 
-<Warning>Never store session tokens in localStorage—use httpOnly cookies or secure sessionStorage.</Warning>
+<Warning>Never store session tokens in localStorage, use httpOnly cookies or secure sessionStorage.</Warning>
 
 ## Add MFA (Multi-Factor Authentication)
 
@@ -132,7 +135,7 @@ export default function MFASetup() {
   };
 
   if (user?.mfaEnabled) {
-    return <div>✅ Multi-factor authentication enabled</div>;
+    return <div> Multi-factor authentication enabled</div>;
   }
 
   return (

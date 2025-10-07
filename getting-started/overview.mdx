@@ -3,6 +3,8 @@ title: "Overview"
 description: "Complete overview of Protekt's authentication capabilities and architecture"
 ---
 
+<img src="/images/protekt overview.png" alt="Hero image showing a secure, modern authentication dashboard with icons for SaaS, API, Mobile, and B2B applications, following the Protekt design style." className="rounded-lg shadow-lg" />
+
 # What You Can Build with Protekt
 
 You're five minutes away from production-ready auth. Build everything from simple login screens to enterprise SSO with one platform.
@@ -165,52 +167,6 @@ app.post('/api/logout-everywhere', async (req, res) => {
 </Tab>
 </Tabs>
 
-## Architecture Overview
-
-Protekt handles auth complexity while integrating seamlessly with your stack.
-
-```mermaid
-graph TD
-    subgraph Frontend ["🖥️ Frontend"]
-        React["⚛️ React"]
-        Mobile["📱 Mobile"]
-        Vue["🟢 Vue"]
-    end
-
-    subgraph Protekt ["🛡️ Protekt Authentication"]
-        Auth["🔐 Auth Service"]
-        JWT["🎟️ JWT Tokens"]
-        Orgs["🏬 Organizations"]
-    end
-
-    subgraph Backend ["⚙️ Backend"]
-        API["🚀 APIs"]
-        DB["🗄️ Database"]
-    end
-
-    subgraph Providers ["🌐 Identity Providers"]
-        Google["🔵 Google"]
-        Microsoft["🟦 Microsoft"]
-        SAML["📄 SAML/SSO"]
-    end
-
-    Frontend -->|🔄 Login Request| Auth
-    Auth -->|✅ Tokens| Frontend
-    Providers --> Auth
-    Frontend -->|🎟️ Send Token| API
-    API -->|🔍 Validate| JWT
-    API --> DB
-
-    classDef frontendStyle fill:#f093fb,stroke:#f5576c,stroke-width:2px,color:#fff
-    classDef protektStyle fill:#4facfe,stroke:#00f2fe,stroke-width:3px,color:#fff
-    classDef backendStyle fill:#43e97b,stroke:#38f9d7,stroke-width:2px,color:#fff
-    classDef providerStyle fill:#fa709a,stroke:#fee140,stroke-width:2px,color:#fff
-    
-    class Frontend frontendStyle  
-    class Protekt protektStyle
-    class Backend backendStyle
-    class Providers providerStyle
-```
 
 **How It Works:**
 1. Your app redirects to Protekt for login
@@ -257,7 +213,7 @@ Ready to add auth to your app? Pick your path:
 <Card title="5-Minute Quickstart" icon="rocket" href="/getting-started/quickstart">
 Get login working right now
 </Card>
-<Card title="Complete Tutorial" icon="book" href="/tutorials/first-integration">
+<Card title="Complete onboarding" icon="book" href="/tutorials/first-integration">
 Build full auth step-by-step
 </Card>
 </CardGroup>

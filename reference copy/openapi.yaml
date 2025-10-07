@@ -1,0 +1,193 @@
+openapi: 3.0.3
+info:
+  title: Protekt API
+  description: Authentication and authorization API for Protekt
+  version: 1.2.0
+  contact:
+    name: Protekt Support
+    email: support@protekt.com
+    url: https://protekt.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.protekt.com/v1
+    description: Production server
+  - url: https://api-staging.protekt.com/v1
+    description: Staging server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate user
+      description: Authenticate a user with email/password or social login
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                password:
+                  type: string
+                  description: User's password
+                provider:
+                  type: string
+                  enum: [google, github, microsoft]
+                  description: Social login provider
+              oneOf:
+                - required: [email, password]
+                - required: [provider]
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: JWT access token
+                  refresh_token:
+                    type: string
+                    description: Refresh token
+                  expires_in:
+                    type: integer
+                    description: Token expiration time in seconds
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      description: Get a new access token using a refresh token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  description: Refresh token
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: New JWT access token
+                  expires_in:
+                    type: integer
+                    description: Token expiration time in seconds
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/me:
+    get:
+      summary: Get current user
+      description: Get the current authenticated user's profile
+      tags:
+        - Users
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+        email:
+          type: string
+          format: email
+          description: User's email address
+        name:
+          type: string
+          description: User's full name
+        picture:
+          type: string
+          format: uri
+          description: User's profile picture URL
+        email_verified:
+          type: boolean
+          description: Whether the user's email is verified
+        created_at:
+          type: string
+          format: date-time
+          description: User creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - email
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error code
+        error_description:
+          type: string
+          description: Human-readable error description
+        status_code:
+          type: integer
+          description: HTTP status code
+      required:
+        - error
+        - status_code 

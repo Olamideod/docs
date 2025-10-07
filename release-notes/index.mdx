@@ -1,99 +1,241 @@
 ---
-title: "Release Notes"
-description: "Latest updates and new features in Protekt"
+title: "Changelog"
+description: "Product updates, new features, and API changes"
 ---
 
-# Release Notes
+New releases and improvements to Protekt.
 
-Stay up to date with the latest features, improvements, and bug fixes in Protekt.
+<Update label="January 15, 2025" tags={["New releases", "Improvements"]} rss={{ title: "January Updates", description: "Organization-level MFA requirements, token expiration changes, and SSO improvements" }}>
+## New features
 
-## Latest Release
+* **Organization-level MFA requirements**: Organizations can now require MFA for all members. Set in organization settings, and users without MFA are prompted to set it up on next login.
+* **Token expiration defaults updated**: Default access token lifetime increased from 15 minutes to 60 minutes based on customer feedback. Refresh tokens remain valid for 30 days.
 
-<Card
-  title="v1.2.0 - Enhanced Security & Performance"
-  icon="star"
-  href="/release-notes/v1.2.0"
->
-  New MFA features, improved performance, and enhanced security controls.
-</Card>
+## Bug fixes and improvements
 
-## RSS Feed
+* Fixed rate limit headers: `X-RateLimit-Reset` now returns correct Unix timestamp (previously returned milliseconds instead of seconds)
+* Fixed SSO callback timeout: SAML assertion processing now completes within 5 seconds (previously could timeout for assertions >100KB)
+* Fixed user metadata updates: Updating metadata no longer overwrites unspecified fields—only provided fields are updated
 
-Subscribe to our RSS feed to get notified of new releases:
+## SDK updates
 
-<Card
-  title="RSS Feed"
-  icon="rss"
-  href="/release-notes/rss.xml"
->
-  Subscribe to release notifications via RSS.
-</Card>
+* JavaScript SDK v2.1.0
+* Python SDK v1.8.0  
+* Go SDK v1.3.0
+</Update>
 
-## Recent Releases
+<Update label="December 20, 2024" tags={["New releases", "Improvements"]} rss={{ title: "December Updates", description: "Magic link authentication, webhook filtering, and improved error responses" }}>
+## Major releases
 
-### v1.2.0 - Enhanced Security & Performance
-**Released**: December 15, 2024
+* **Magic link authentication**: Send passwordless login links via email. Users click the link to authenticate without entering passwords. [See guide](../guides/send-magic-link)
+* **Webhook event filtering**: Filter webhooks by event type in dashboard settings to reduce unnecessary calls. Available events: `user.created`, `user.updated`, `user.deleted`, `login.success`, `login.failed`, `mfa.enabled`, `organization.created`
 
-- **New**: WebAuthn support for passwordless authentication
-- **New**: Enhanced MFA policies with conditional requirements
-- **Improved**: API performance with 40% faster response times
-- **Fixed**: Token refresh issues in mobile applications
+## API improvements
 
-[Read Full Release Notes →](/release-notes/v1.2.0)
+* **Enhanced error responses**: Error responses now include `error_code` for programmatic handling:
+  ```json
+  {
+    "error": {
+      "code": "invalid_email",
+      "message": "Email address is invalid",
+      "field": "email"
+    }
+  }
+  ```
 
-### v1.1.0 - Multi-Tenant & B2B Features
-**Released**: November 20, 2024
+## Security updates
 
-- **New**: Multi-tenant organization management
-- **New**: B2B SSO with enterprise identity providers
-- **New**: Advanced role-based access control (RBAC)
-- **Improved**: Dashboard analytics and reporting
+* Enhanced token validation: JWT signatures now validated against rotating keys, improving security without breaking existing integrations
 
-### v1.0.0 - Initial Release
-**Released**: October 1, 2024
+## Bug fixes
 
-- **New**: Core authentication and authorization
-- **New**: Multi-factor authentication (TOTP, SMS)
-- **New**: Social login providers (Google, GitHub, etc.)
-- **New**: REST API and SDKs for Node.js, Python, and Go
+* Fixed organization member listing pagination: `/organizations/{id}/members` endpoint now correctly returns `pagination` object with total count
 
-## Release Schedule
+## SDK updates
 
-We follow a predictable release schedule:
+* JavaScript SDK v2.0.0
+* Python SDK v1.7.0
+* Go SDK v1.2.0
+* React Native SDK v1.0.0 (new)
+</Update>
 
-- **Major Releases**: Every 3 months (v1.0, v2.0, etc.)
-- **Minor Releases**: Monthly (v1.1, v1.2, etc.)
-- **Patch Releases**: Weekly as needed (v1.1.1, v1.1.2, etc.)
+<Update label="December 1, 2024" tags={["Breaking changes", "Improvements"]} rss={{ title: "December Updates", description: "Deprecated endpoint removal and session API enhancements" }}>
+## Breaking changes
 
-## Breaking Changes
+* **Removed deprecated `/auth/login` endpoint**: Direct login endpoint removed. Use OAuth flow instead:
+  ```javascript
+  // Old (removed)
+  await fetch('https://api.protekt.com/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password })
+  });
 
-We strive to maintain backward compatibility, but occasionally breaking changes are necessary. All breaking changes are:
+  // New (use this)
+  const loginUrl = protekt.getLoginUrl();
+  res.redirect(loginUrl);
+  ```
+  [Migration guide](../guides/migrate-direct-login)
 
-1. **Announced in advance** via our blog and release notes
-2. **Documented clearly** with migration guides
-3. **Deprecated gradually** with clear timelines
-4. **Supported during transition** with both old and new APIs
+## Improvements
 
-## Beta Features
+* **Session API enhancements**: `/sessions` endpoint now includes device information and last activity timestamp:
+  ```json
+  {
+    "id": "sess_123",
+    "userId": "usr_456",
+    "device": "Chrome on macOS",
+    "lastActivity": "2024-12-01T10:30:00Z",
+    "createdAt": "2024-12-01T08:00:00Z"
+  }
+  ```
 
-Try new features before they're generally available:
+## SDK updates
 
-<Card
-  title="Beta Program"
-  icon="flask"
-  href="https://beta.protekt.com"
->
-  Join our beta program to test new features early.
-</Card>
+* JavaScript SDK v1.9.0
+* Python SDK v1.6.0
+* Go SDK v1.1.0
+</Update>
 
-## Feedback
+<Update label="November 20, 2024" tags={["New releases"]} rss={{ title: "November Updates", description: "Protekt API v1.0 general availability" }}>
+## Major release: API v1.0
 
-We value your feedback on new features and improvements:
+First stable release. All endpoints production-ready.
 
-- **Feature Requests**: [GitHub Issues](https://github.com/protekt/protekt/issues)
-- **Bug Reports**: [Support](mailto:support@protekt.com)
-- **General Feedback**: [Community Forum](https://community.protekt.com)
+**Core features:**
+* OAuth 2.0 authentication
+* User management
+* Organization/team support
+* Role-based permissions
+* MFA (TOTP, SMS)
+* Enterprise SSO (SAML, OIDC)
+* Session management
+* Webhooks
 
-## Changelog
+**Available SDKs:**
+* JavaScript/Node.js v1.8.0
+* Python v1.5.0
+* Go v1.0.0
+</Update>
 
-For a complete list of all changes, see our [changelog](/changelog.md). 
+<Update label="October 15, 2024" tags={["Improvements"]} rss={{ title: "October Updates", description: "Dashboard improvements and SDK enhancements" }}>
+## Dashboard improvements
+
+* New organization switcher for users in multiple organizations
+* Improved API key management interface
+* Enhanced webhook configuration UI
+* Real-time update status indicators
+
+## SDK improvements
+
+* Added automatic token refresh to all SDKs
+* Improved error messages and debugging
+* TypeScript definitions for JavaScript SDK
+* Enhanced PKCE support for mobile SDKs
+
+## Bug fixes
+
+* Fixed redirect behavior after SSO authentication
+* Improved error handling for expired tokens
+* Fixed pagination issues in user listing endpoint
+* Enhanced rate limit handling across all SDKs
+</Update>
+
+<Update label="September 10, 2024" tags={["New releases", "Improvements"]} rss={{ title: "September Updates", description: "Organization invitations and permission enhancements" }}>
+## New features
+
+* **Team invitations**: Admins can now invite users to organizations via email with custom role assignment
+* **Permission inheritance**: Roles can now inherit permissions from other roles, reducing configuration complexity
+* **Audit logging**: All authentication and permission changes now logged for compliance
+
+## Improvements
+
+* Enhanced organization member management UI
+* Improved SSO configuration flow
+* Better error messages for authentication failures
+* Performance improvements for token validation
+
+## Bug fixes
+
+* Fixed issue with organization domain verification
+* Resolved session persistence problems on mobile Safari
+* Improved handling of concurrent login attempts
+</Update>
+
+<Update label="August 5, 2024" tags={["Improvements"]} rss={{ title: "August Updates", description: "Performance improvements and mobile SDK updates" }}>
+## Performance improvements
+
+* Token validation now 40% faster
+* Reduced API response times by 25%
+* Improved database query optimization
+* Enhanced caching for frequently accessed endpoints
+
+## Mobile SDK updates
+
+* Added biometric authentication support for iOS and Android
+* Improved offline token handling
+* Enhanced error recovery for network failures
+* Better background session management
+
+## Bug fixes
+
+* Fixed token refresh race conditions
+* Improved session cleanup on logout
+* Resolved issues with special characters in passwords
+* Enhanced CORS handling for cross-origin requests
+</Update>
+
+<Update label="July 1, 2024" tags={["New releases"]} rss={{ title: "July Updates", description: "Beta launch and initial SDK releases" }}>
+## Beta launch
+
+Protekt enters public beta with core authentication features.
+
+**Launch features:**
+* OAuth 2.0 authentication flow
+* Basic user management
+* Session handling
+* Initial SDK support (JavaScript, Python)
+
+## Early access
+
+Beta users get priority support and input on product roadmap. [Sign up for beta access](https://protekt.com/beta)
+
+## SDK releases
+
+* JavaScript SDK v0.9.0 (beta)
+* Python SDK v0.8.0 (beta)
+
+## Known limitations
+
+* Enterprise SSO not yet available
+* Mobile SDKs in development
+* API rate limits lower during beta
+</Update>
+
+## Deprecation notices
+
+### Scheduled for removal
+
+**March 1, 2025: Legacy token format**
+
+Tokens issued before December 2024 will no longer be accepted. Refresh all active sessions before this date.
+
+**Action required:**
+```javascript
+// Force all users to re-authenticate
+await protekt.sessions.revokeAll();
+```
+
+**April 1, 2025: API v0.x endpoints**
+
+All v0.x API endpoints will return 410 Gone. Update to v1 endpoints.
+
+## Stay updated
+
+**Email notifications**: [Subscribe to updates](https://protekt.com/updates)  
+**RSS feed**: `https://protekt.com/changelog.xml`  
+**Status page**: [status.protekt.com](https://status.protekt.com)
+
+For SDK-specific changes:
+* [JavaScript SDK Releases](https://github.com/protekt/js-sdk/releases)
+* [Python SDK Releases](https://github.com/protekt/python-sdk/releases)
+* [Go SDK Releases](https://github.com/protekt/go-sdk/releases)

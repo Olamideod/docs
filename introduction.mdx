@@ -1,122 +1,86 @@
 ---
-title: "Welcome to Protekt"
-description: "Authentication-as-a-service for engineering teams who ship fast"
+title: "Introduction"
+description: Authentication-as-a-service for fast-moving engineering teams (faster scan, avoids repetition)
 ---
+
+<img src="/images/protekt intro.png" alt="Protekt dashboard showing user management interface with real-time authentication metrics and integration status" className="rounded-lg shadow-lg" />
 
 # Welcome to the Protekt Documentation!
 
-This is the documentation for Protekt, an authentication SaaS platform that lets developers add secure login to any app in under 15 minutes. Install our SDKs, configure your auth flows, and ship features instead of debugging JWT libraries. It's that simple.
+Protekt makes authentication simple. In under 15 minutes, you can add secure login to any app using our SDKs and APIs. From quickstarts to advanced enterprise integrations, this documentation gives you everything you need to get started and grow.
 
-It covers everything from 5-minute quickstart to advanced enterprise features and API integrations. Here you can explore step-by-step guides and technical explanations for all authentication capabilities, plus discover optimization strategies to accelerate your development workflow. This also includes comprehensive API reference documentation covering how to build on top of Protekt through REST APIs, webhooks, and multi-language SDKs. These guides go deep on how to integrate and extend Protekt for your specific auth requirements.
+---
 
-<img src="/images/protekt-hero.png" alt="Protekt dashboard showing user management interface with real-time authentication metrics and integration status" className="rounded-lg shadow-lg" />
+## 📚 Documentation Structure
 
-## What is Protekt?
+Here’s how the docs are organized:
 
-Protekt eliminates authentication complexity from your development workflow. Instead of spending weeks building password reset flows, session management, and GDPR compliance, you get production-ready auth infrastructure that scales from MVP to enterprise.
+### Getting Started
+- [Introduction](/getting-started/introduction)  
+- [Overview](/getting-started/overview)  
+- [Quickstart](/getting-started/quickstart)  
+- [First Integration Tutorial](/tutorials/first-integration)  
+- [Secure Your App](/tutorials/secure-your-app)  
+- [Mobile App Integration](/tutorials/mobile-app)  
+- [Server-to-Server Setup](/tutorials/server-to-server)  
+- [B2B Organizations](/tutorials/b2b-organizations)  
 
-**Core capabilities:**
-- JWT-based authentication with automatic token refresh
-- Multi-factor authentication (TOTP, SMS, WebAuthn)
-- Enterprise SSO (SAML, OIDC) with zero configuration
-- Role-based access control with organization management
-- Real-time webhooks for user lifecycle events
+### Guides
+- [Enable MFA](/how-to-guides/enable-mfa)  
+- [Send Magic Links](/how-to-guides/send-magic-link)  
+- [Set Up RBAC](/how-to-guides/setup-rbac)  
+- [Implement SSO](/how-to-guides/implement-sso)  
+- [Migrate from Auth0](/how-to-guides/migrate-from-auth0)  
 
-## Who It's For
+### API Reference
+- [API Overview](/reference/api-overview)  
+- [Python SDK](/reference/sdks/python)  
+- [Go SDK](/reference/sdks/go)  
+- [Node SDK](/reference/sdks/node)  
 
-**Startup developers** building SaaS products who need auth fast without security compromises.
+### Changelog
+- [Releases](/changelog/overview)  
 
-**Enterprise engineering teams** requiring SSO, compliance, and advanced security features.
+### Help & Troubleshooting
+- [Common Errors](/troubleshooting/common-errors)  
+- [Debugging Guide](/troubleshooting/debugging-guide)  
+- [FAQ](/support/faq)  
+- [Glossary](/support/glossary)  
 
-**API-first companies** needing stateless authentication across microservices.
+---
 
-**Mobile app teams** wanting secure, offline-capable auth with biometric support.
+## 🚀 What You Can Do
 
-## Why It Matters
-
-Every 10-minute reduction in integration time cuts customer acquisition cost by $0.80. Protekt gets developers to their first successful login in under 15 minutes.
-
-**Time saved:** 2-3 weeks per auth implementation
-**Support reduction:** 40% fewer auth-related tickets
-**Performance:** Sub-200ms token validation globally
-**Security:** Zero-config protection against common auth vulnerabilities
-
-## What You Can Build
-
-**SaaS Applications**
-Multi-tenant authentication with organization management, role-based permissions, and enterprise SSO integration.
-
-**API Platforms**
-Stateless JWT validation across microservices with automatic token refresh and fine-grained scope control.
-
-**Mobile Applications**
-Native iOS and Android SDKs with biometric authentication, secure token storage, and offline capability.
-
-**B2B Products**
-Enterprise-ready features like SAML SSO, audit logging, and compliance controls built-in from day one.
-
-<CodeGroup>
-
-```jsx React SaaS App
-import { useProtekt } from '@protekt/react';
-
-function App() {
-  const { user, login, logout, isLoading } = useProtekt();
-  
-  if (isLoading) return <div>Loading...</div>;
-  if (!user) return <button onClick={login}>Sign In</button>;
-  
-  return (
-    <div>
-      <h1>Welcome, {user.name}</h1>
-      <p>Organization: {user.org.name}</p>
-      <button onClick={logout}>Sign Out</button>
-    </div>
-  );
-}
-```
-
-```javascript API Protection
-import { Protekt } from '@protekt/node';
-
-const protekt = new Protekt(process.env.PROTEKT_SECRET);
-
-// Protect any endpoint
-app.get('/api/profile', protekt.requireAuth, (req, res) => {
-  res.json({ 
-    user: req.user,
-    permissions: req.user.permissions 
-  });
-});
-```
-
-```python Microservice Auth
-from protekt import verify_token, require_permission
-
-@app.route('/api/admin/users')
-@require_permission('users:read')
-def list_users():
-    return {'users': get_organization_users()}
-```
-
-</CodeGroup>
-
-## Get Started Now
-
-Choose your integration path:
-
-<CardGroup cols={3}>
-<Card title="Quick Setup" icon="rocket" href="/getting-started/quickstart">
-5-minute integration with guided setup wizard
+<CardGroup cols={2}>
+<Card title="Quickstart" icon="rocket" href="/getting-started/quickstart">
+Deploy your first auth flow in under 5 minutes.
 </Card>
-<Card title="Complete Guide" icon="book" href="/tutorials/first-integration">
-Step-by-step tutorial with best practices
+<Card title="Tutorials" icon="code" href="/tutorials/first-integration">
+Step-by-step integration with best practices.
 </Card>
-<Card title="Migration" icon="arrow-right" href="/how-to-guides/migrate-from-auth0">
-Move from Auth0, Firebase, or custom auth
+<Card title="Guides" icon="book" href="/how-to-guides/enable-mfa">
+Deep dives into MFA, SSO, RBAC, and migrations.
+</Card>
+<Card title="API Reference" icon="terminal" href="/reference/api-overview">
+Explore REST APIs, webhooks, and SDKs.
+</Card>
+<Card title="Changelog" icon="history" href="/changelog/overview">
+Stay up to date with new features and improvements.
+</Card>
+<Card title="Support" icon="help-circle" href="/support/faq">
+Get help, see FAQs, and learn key terminology.
 </Card>
 </CardGroup>
 
 ---
 
-**Ready to ship features instead of auth infrastructure?** Start with our [5-minute quickstart](/getting-started/quickstart) or explore the [complete overview](/getting-started/overview) of what Protekt can do.
+## 🔑 Why Protekt?
+
+- **Save Time:** 2–3 weeks saved per auth implementation  
+- **Enterprise Ready:** SSO, RBAC, and compliance built in  
+- **Performance:** Sub-200ms token validation globally  
+- **Security:** Zero-config protection against common vulnerabilities  
+
+---
+
+**👉 Ready to get started?** Begin with our [Quickstart guide](/getting-started/quickstart) or jump to the [Overview](/getting-started/overview).  

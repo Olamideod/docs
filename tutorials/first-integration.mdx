@@ -1,19 +1,19 @@
 ---
 title: "First Integration"
-description: "Complete tutorial: from zero to production-ready authentication"
+description: "Complete tutorial to your first login flow"
 ---
 
-# Build Your First Login Flow
+In this tutorial, you'll learn how to build a complete login system. By the end, you'll have signup, signin, user profiles, and protected routes working seamlessly together.
 
-You'll build a complete login system in 15 minutes. By the end, you'll have signup, signin, user profiles, and protected routes working seamlessly together.
-
-## Goal of This Tutorial
+## Goal of this tutorial
 
 Authentication touches every part of your application. This tutorial walks you through building a React app with Express backend that handles:
-- **User registration and login** - Secure signup/signin flows
-- **Protected dashboard pages** - Routes that require authentication  
-- **User profile management** - View and update user data
-- **Secure logout flow** - Clean session termination
+1. User registration and login: Secure signup/signin flows
+2. Protected dashboard pages: Routes that require authentication  
+3. User profile management: View and update user data
+4. Secure logout flow: Clean session termination
+
+## Architecture overview
 
 ```mermaid
 sequenceDiagram
@@ -33,7 +33,7 @@ sequenceDiagram
 
 <Tip>This flow follows OAuth 2.0 standards, making it secure and compatible with enterprise requirements.</Tip>
 
-## Setup Project & Install SDK
+## Setup project & install sdk
 
 Modern authentication requires both frontend and backend coordination. We'll create a clean separation that scales well.
 
@@ -68,7 +68,7 @@ PROTEKT_REDIRECT_URI=http://localhost:3000/callback
 
 <Warning>Never commit secrets to version control. Use `.env` files locally and secure vaults in production.</Warning>
 
-## Add Sign-Up / Sign-In Buttons
+## Add sign-up or sign-in buttons
 
 The `ProtektProvider` component wraps your entire app, managing authentication state automatically. Think of it as a smart container that knows whether users are logged in.
 
@@ -113,7 +113,7 @@ export default function Login() {
 ```
 </CodeGroup>
 
-## Handle Callback
+## Handle callback
 
 The callback page is where OAuth magic happens. When users complete authentication on Protekt's servers, they're redirected back to your app with a special code.
 
@@ -163,7 +163,7 @@ app.get('/auth/callback', async (req, res) => {
 ```
 </CodeGroup>
 
-## Fetch User Data
+## Fetch user data
 
 Once authenticated, your app needs user information. The profile component demonstrates how to securely fetch data using access tokens.
 
@@ -213,7 +213,7 @@ router.get('/profile', protekt.requireAuth, (req, res) => {
 ```
 </CodeGroup>
 
-## Protect Routes
+## Protect routes
 
 Route protection ensures only authenticated users access sensitive pages. The `ProtectedRoute` wrapper component makes this elegant and reusable.
 
@@ -253,7 +253,7 @@ export default function Dashboard() {
 ```
 </CodeGroup>
 
-## Test Locally
+## Test locally
 
 Testing authentication requires running both servers simultaneously. Each handles different responsibilities in the auth flow.
 
@@ -270,15 +270,15 @@ cd frontend && npm start
 </CodeGroup>
 
 **Test these critical flows:**
-1. **Registration Flow** - New users can create accounts
-2. **Login Flow** - Existing users can sign in  
-3. **Route Protection** - Unauthenticated users can't access `/dashboard`
-4. **Profile Access** - Logged-in users see their information
-5. **Logout Flow** - Users can securely sign out
+1. Registration Flow: New users can create accounts
+2. Login Flow: Existing users can sign in  
+3. Route Protection: Unauthenticated users can't access `/dashboard`
+4. Profile Access: Logged-in users see their information
+5. Logout Flow: Users can securely sign out
 
 <Tip>Open browser dev tools to watch network requests and see tokens being exchanged.</Tip>
 
-## Wrap-Up and Next Steps
+## Next steps
 
 **Congratulations!** You built a production-ready authentication system covering the complete user lifecycle. Your app now handles registration, login, profile management, route protection, and secure logout.
 
@@ -289,16 +289,16 @@ cd frontend && npm start
 - User profile management
 
 <CardGroup cols={2}>
-<Card title="Secure Your App" icon="shield" href="/tutorials/secure-your-app">
-Add MFA, session expiry, and advanced security
-</Card>
-<Card title="Add Organizations" icon="users" href="/tutorials/b2b-organizations">  
-Build team management and role-based access
-</Card>
-<Card title="Mobile Integration" icon="mobile" href="/tutorials/mobile-app">
-iOS and Android authentication
-</Card>
-<Card title="Enterprise SSO" icon="building" href="/how-to-guides/implement-sso">
-Connect Google, Microsoft, Okta
-</Card>
+  <Card title="Enable MFA" icon="lock" href="/guides/enable-mfa">
+    Add two-factor authentication to strengthen account security.
+  </Card>
+  <Card title="Manage Organizations" icon="users" href="/tutorials/b2b-multi-tenant-app">
+    Create organizations and assign users with role-based permissions.
+  </Card>
+  <Card title="Mobile Integration" icon="smartphone" href="/tutorials/mobile-app-integration">
+    Set up authentication in React Native or Flutter apps.
+  </Card>
+  <Card title="Implement SSO" icon="key" href="/guides/implement-sso">
+    Connect enterprise identity providers like Google, Microsoft, or Okta.
+  </Card>
 </CardGroup>

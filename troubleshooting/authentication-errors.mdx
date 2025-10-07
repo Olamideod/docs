@@ -1,0 +1,310 @@
+---
+title: "Authentication Errors"
+description: "Common authentication problems and how to fix them"
+---
+
+This page covers authentication errors developers encounter when integrating Protekt. Each error includes the cause and solution.
+
+<Note>
+**Quick navigation:** Use the quick reference table below to identify your error, then jump to the detailed solution. Most errors can be fixed in under 5 minutes.
+</Note>
+
+## Quick reference
+Scan this table to quickly identify your error and jump to the detailed solution.
+
+| Error Code | When It Happens | Quick Fix |
+|------------|----------------|-----------|
+| `redirect_uri_mismatch` | After clicking login | Match URL exactly in dashboard |
+| `invalid_grant` | During token exchange | Don't refresh callback page |
+| `invalid_client` | Token exchange or API calls | Verify Client ID and Secret |
+| `token_expired` | Making API calls | Implement token refresh |
+| `session_invalid` | Protected route requests | Use persistent session store |
+| `rate_limit_exceeded` | Too many auth requests | Handle `retry_after` value |
+
+
+## Invalid redirect URI
+This error appears when your configured callback URL doesn't match the one in your code.
+
+**Error Code:** `redirect_uri_mismatch`
+
+**Cause:** The `redirectUri` in your code doesn't exactly match what's in your dashboard. Common mismatches include trailing slashes (`/callback/` vs `/callback`), protocols (`http://` vs `https://`), ports (`:3000` vs `:8080`), or case differences.
+
+<Warning>
+Common mismatches that cause this error:
+- Trailing slash: `/callback/` ≠ `/callback`
+- Protocol: `http://` ≠ `https://`
+- Port: `:3000` ≠ `:8080`
+- Case: `/Callback` ≠ `/callback`
+</Warning>
+
+**Solution:**
+
+```javascript
+const protekt = new Protekt({
+  redirectUri: 'http://localhost:3000/callback'  // Must match dashboard exactly
+});
+```
+
+<Tip>
+Copy the exact URL from your code and paste it into **Authentication → Redirect URIs** in your dashboard. Even a single character difference will cause this error.
+</Tip>
+
+## Invalid authorization code
+Authorization codes expire quickly and can only be used once—never refresh the callback page.
+
+**Error Code:** `invalid_grant`
+
+**Cause:** Codes expire in 60 seconds and are single-use. If users refresh the callback page, the code is reused and fails.
+
+<Info>
+**Key principle:** Never display content directly in the callback route. Always redirect to another page after exchanging the authorization code for tokens.
+</Info>
+
+### Bad practice
+
+```javascript
+app.get('/callback', async (req, res) => {
+  const { user } = await protekt.handleCallback(req.query.code);
+  res.send(`Welcome ${user.email}`);  // ❌ User might refresh
+});
+```
+
+### Best practice
+
+```javascript
+app.get('/callback', async (req, res) => {
+  const { user } = await protekt.handleCallback(req.query.code);
+  req.session.user = user;
+  res.redirect('/dashboard');  // ✅ Safe to refresh
+});
+```
+
+<Warning>
+**Security:** Never call Protekt API directly from browser code. This would expose your API keys and tokens to anyone who views your frontend source code. Always proxy requests through your backend server.
+</Warning>
+
+
+## Invalid client credentials
+Your Client ID or Secret is wrong, missing, or not being sent correctly.
+
+**Error Code:** `invalid_client`
+
+**Cause:** Credentials aren't loaded from your environment or were copied incorrectly.
+
+**Check your .env:**
+
+```bash
+PROTEKT_CLIENT_ID=client_abc123
+PROTEKT_CLIENT_SECRET=secret_xyz789
+```
+
+**Verify loading:**
+
+```javascript
+require('dotenv').config();
+console.log('Loaded:', !!process.env.PROTEKT_CLIENT_ID);
+```
+
+<Tip>
+If credentials load correctly but still fail, copy them fresh from **Settings → API Keys** in your dashboard. Sometimes invisible characters get copied accidentally.
+</Tip>
+
+
+## Token expired
+Access tokens expire after 15-60 minutes and need to be refreshed automatically.
+
+**Error Code:** `token_expired`
+
+**Cause:** Your access token expired and wasn't refreshed.
+
+**Enable automatic refresh:**
+
+```javascript
+const protekt = new Protekt({
+  clientId: process.env.PROTEKT_CLIENT_ID,
+  clientSecret: process.env.PROTEKT_CLIENT_SECRET,
+  autoRefresh: true  // SDK handles refresh
+});
+```
+
+**Manual refresh:**
+
+```javascript
+if (response.status === 401) {
+  const tokens = await protekt.refreshToken(req.session.refreshToken);
+  req.session.accessToken = tokens.accessToken;
+}
+```
+
+Check expiration at [jwt.io](https://jwt.io) by inspecting the `exp` claim.
+
+<Note>
+Token lifetimes are configurable in your dashboard under **Security → Token Settings**. Default is 2 hours for access tokens and 30 days for refresh tokens.
+</Note>
+
+---
+
+## Session not found
+Sessions are lost when servers restart unless you use persistent storage.
+
+**Error Code:** `session_invalid`
+
+**Cause:** In-memory sessions disappear when your server restarts, or cookies are blocked.
+
+**Use Redis for production:**
+
+```javascript
+const RedisStore = require('connect-redis')(session);
+
+app.use(session({
+  store: new RedisStore({ client: redis.createClient() }),
+  secret: process.env.SESSION_SECRET,
+  cookie: {
+    maxAge: 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production'
+  }
+}));
+```
+
+<Warning>
+In-memory sessions (the default) are lost when your server restarts. Always use a persistent store like Redis, MongoDB, or PostgreSQL in production.
+</Warning>
+
+---
+
+## Rate limit exceeded
+Protekt limits authentication requests to prevent brute force attacks.
+
+**Error Code:** `rate_limit_exceeded`
+
+**Limits:** 5 login attempts per 15 minutes per email, 10 token exchanges per minute, 100 API calls per minute.
+
+**Handle gracefully:**
+
+```javascript
+try {
+  await protekt.login(email, password);
+} catch (error) {
+  if (error.code === 'rate_limit_exceeded') {
+    res.json({ 
+      error: `Try again in ${error.retry_after} seconds` 
+    });
+  }
+}
+```
+
+<Info>
+If you're hitting rate limits during development, check for infinite loops in your authentication flow or error handling code.
+</Info>
+
+---
+
+## CORS errors
+Never call Protekt API directly from browser code—always proxy through your server.
+
+**Error:** `Access to fetch has been blocked by CORS policy`
+
+**Cause:** Browser security prevents frontend code from calling external APIs with credentials.
+
+**Wrong:**
+
+```javascript
+// ❌ Browser code
+fetch('https://api.protekt.com/users/me', {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+```
+
+**Correct:**
+
+```javascript
+// ✅ Frontend calls your backend
+fetch('/api/me');
+
+// ✅ Backend calls Protekt
+app.get('/api/me', async (req, res) => {
+  const user = await protekt.users.get(req.session.userId);
+  res.json(user);
+});
+```
+
+---
+
+## Debugging checklist
+Follow these steps systematically when authentication fails.
+
+<Steps>
+  <Step title="Check browser console">
+    Look for JavaScript errors or failed network requests in DevTools.
+  </Step>
+  
+  <Step title="Enable debug mode">
+    Add `debug: true` when initializing: `new Protekt({ debug: true })`
+  </Step>
+  
+  <Step title="Inspect network requests">
+    Verify redirects happen correctly and check request/response headers in the Network tab.
+  </Step>
+  
+  <Step title="Verify credentials">
+    Confirm Client ID and Secret load correctly: `console.log(process.env.PROTEKT_CLIENT_ID)`
+  </Step>
+  
+  <Step title="Match callback URLs">
+    Must match exactly in code and dashboard, including trailing slashes and ports.
+  </Step>
+  
+  <Step title="Test in incognito">
+    Rules out cookie, cache, and extension issues.
+  </Step>
+  
+  <Step title="Decode tokens">
+    Use [jwt.io](https://jwt.io) to check `exp` (expiration) and `project_id` claims.
+  </Step>
+  
+  <Step title="Check service status">
+    Visit [status.protekt.com](https://status.protekt.com) to rule out incidents.
+  </Step>
+</Steps>
+
+---
+
+## Common patterns
+Real-world scenarios and their solutions.
+
+<AccordionGroup>
+
+<Accordion title="Localhost works but production fails" icon="globe">
+**Solution:** Add production domain to dashboard redirect URIs and verify environment variables are set on your production server.
+</Accordion>
+
+<Accordion title="Works in one browser but not another" icon="browsers">
+**Solution:** Test in incognito mode. Adjust `sameSite` cookie setting or check for browser extensions interfering.
+</Accordion>
+
+<Accordion title="User gets logged out quickly" icon="clock-rotate-left">
+**Solution:** Use persistent session store like Redis instead of in-memory sessions.
+</Accordion>
+
+<Accordion title="Random 401 errors in production" icon="triangle-exclamation">
+**Solution:** Implement automatic token refresh and verify system clocks are synchronized across servers.
+</Accordion>
+
+</AccordionGroup>
+
+---
+
+## Need more help?
+
+<CardGroup cols={3}>
+  <Card title="Token Validation" icon="shield-check" href="./token-validation">
+    JWT and session validation errors
+  </Card>
+  <Card title="Debugging Guide" icon="bug" href="./debugging-guide">
+    Systematic debugging approach
+  </Card>
+  <Card title="Support Center" icon="headset" href="https://protekt.dev/support">
+    Contact our support team
+  </Card>
+</CardGroup>

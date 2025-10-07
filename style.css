@@ -1,0 +1,106 @@
+:root {
+  --hover-bg: rgba(13, 84, 239, 0.747); /* subtle hover using primary */
+}
+
+.sidebar-item a:hover {
+  background-color: var(--hover-bg);
+}
+
+.userback-button.userback-button-se
+    > .userback-button-content {
+      padding: 0 16px;
+    }
+
+/* ==================
+   Utilities
+   ================== */
+#page-title {
+  line-height: var(--leading-tight) !important;
+  margin-bottom: var(--space-0);
+}
+
+.text-muted {
+  color: var(--text-tertiary);
+}
+
+#userback_button_container
+      > .userback-button.userback-button-se
+    > .userback-button-content {
+    background-color: #12066b;
+    color: #fff;
+  }
+
+.text-small {
+  font-size: var(--text-sm);
+}
+
+/* ==================
+   Animations
+   ================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-base) ease-out;
+}
+
+/* ==================
+   Responsive Design
+   ================== */
+@media (max-width: 1024px) {
+  :root {
+    --content-width: 100%;
+  }
+  
+  h1 {
+    font-size: var(--text-3xl);
+  }
+  
+  h2 {
+    font-size: var(--text-xl);
+  }
+}
+
+@media (max-width: 640px) {
+  h1 {
+    font-size: var(--text-2xl);
+  }
+  
+  h2 {
+    font-size: var(--text-lg);
+  }
+  
+  table {
+    font-size: var(--text-xs);
+  }
+  
+  td, th {
+    padding: var(--space-2);
+  }
+}
+
+/* ==================
+   Print Styles
+   ================== */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  
+  #navbar, #sidebar-content {
+    display: none;
+  }
+  
+  #content-area {
+    max-width: 100%;
+  }
+}

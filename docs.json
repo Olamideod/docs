@@ -1,92 +1,117 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "maple",
   "name": "Protekt Documentation",
   "colors": {
     "primary": "#2563EB",
     "light": "#3B82F6",
-    "dark": "#1E40AF"
+    "dark": "#2413f8"
+    },
+    "background": {
+    "color": {
+      "light": "#FAFBF8",
+      "dark": "#09090d"
+    }
   },
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
       {
-        "tab": "Introduction",
+        "tab": "Guides",
         "groups": [
           {
             "group": "Getting Started",
             "pages": [
-             "introduction",
-             "getting-started/overview",
-             "getting-started/quickstart"
+              "getting-started/introduction",
+              "getting-started/quickstart"
             ]
           },
           {
             "group": "Tutorials",
             "pages": [
               "tutorials/first-integration",
-              "tutorials/secure-your-app",
               "tutorials/mobile-app",
-              "tutorials/server-to-server",
               "tutorials/b2b-organizations"
+            ]
+          },
+          {
+            "group": "How-to",
+            "pages": [
+              "how-to-guides/enable-mfa",
+              "how-to-guides/send-magic-link",
+              "how-to-guides/setup-rbac",
+              "how-to-guides/implement-sso",
+              "how-to-guides/migrate-from-auth0"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "concepts/authentication-flows",
+              "concepts/jwt-vs-sessions",
+              "concepts/multi-tenancy",
+              "concepts/rbac-permissions",
+              "concepts/security-model"
             ]
           }
         ]
       },
       {
-        "tab": "Feature Guide",
+        "tab": "API Reference",
         "groups": [
           {
-      "group": "Guides",
-      "pages": [
-        "how-to-guides/enable-mfa",
-        "how-to-guides/send-magic-link",
-        "how-to-guides/setup-rbac", 
-        "how-to-guides/implement-sso",
-        "how-to-guides/migrate-from-auth0"
-      ]
-    },
-    {
-      "group": "Concepts",
-      "pages": [
-        "explanation/jwt-vs-session",
-        "explanation/architecture-decisions"
-      ]
-    },
-    {
-      "group": "API Reference",
-      "pages": [
-        "reference/api-overview",
-        "reference/authentication",
-        "reference/users",
-        "reference/organizations"
-      ]
-    },
-    {
-      "group": "SDKs",
-      "pages": [
-        "sdks/javascript",
-        "sdks/node",
-        "sdks/python",
-        "sdks/go"
-      ]
-    },
-    {
-      "group": "Security",
-      "pages": [
-        "security/overview",
-        "security/best-practices"
-      ]
-    },
-    {
-      "group": "Support",
-      "pages": [
-        "troubleshooting/common-errors",
-        "troubleshooting/debugging-guide",
-        "faq",
-        "glossary"
-      ]
-    }
+            "group": "REST API",
+            "pages": [
+              "reference/authentication",
+              "reference/users",
+              "reference/organizations",
+              "reference/sessions",
+              "reference/permissions",
+              "reference/webhooks"
+            ]
+          },
+          {
+            "group": "SDKs",
+            "pages": [
+              "sdks/javascript",
+              "sdks/python",
+              "sdks/go",
+              "sdks/react-native",
+              "sdks/flutter"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Resources",
+        "groups": [
+          {
+            "group": "Troubleshooting",
+            "pages": [
+              "troubleshooting/authentication-errors",
+              "troubleshooting/token-validation",
+              "troubleshooting/sso-integration",
+              "troubleshooting/debugging-guide"
+            ]
+          },
+          {
+            "group": "Support",
+            "pages": [
+              "support/faq",
+              "support/glossary"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "groups": [
+          {
+            "group": "Product Updates",
+            "pages": [
+              "release-notes/index"
+            ]
+          }
         ]
       }
     ]
@@ -107,6 +132,9 @@
       "label": "Dashboard",
       "href": "https://dashboard.protekt.com"
     }
+  },
+  "contextual": {
+    "options": ["copy", "view", "chatgpt", "claude"]
   },
   "footer": {
     "socials": {

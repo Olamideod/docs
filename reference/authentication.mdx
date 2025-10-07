@@ -1,0 +1,277 @@
+---
+title: "Authentication API"
+sidebarTitle: "Authentication"
+description: "OAuth 2.0 token operations for secure API access"
+---
+
+The Authentication API handles OAuth 2.0 token operations for secure API access. Exchange authorization codes for tokens, refresh expired tokens, and revoke tokens when users log out.
+
+<Info>
+**Base URL:** `https://api.protekt.com/v1`
+</Info>
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/oauth/token` | Exchange authorization code for tokens |
+| POST | `/oauth/refresh` | Refresh access token |
+| POST | `/oauth/revoke` | Revoke tokens |
+
+
+## Exchange authorization code
+
+Trade your authorization code for access and refresh tokens after user authentication.
+
+**POST** `/oauth/token`
+
+### Request parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `grant_type` | string | Yes | Must be `authorization_code` |
+| `code` | string | Yes | Authorization code from redirect callback |
+| `redirect_uri` | string | Yes | Exact URI from authorization request |
+| `client_id` | string | Yes | Your application client ID |
+| `client_secret` | string | Yes | Your application secret |
+| `code_verifier` | string | No | PKCE code verifier for public clients |
+
+<Info>
+Use `code_verifier` for mobile apps and SPAs that can't securely store secrets. See [PKCE guide](../concepts/authentication-flows#pkce).
+</Info>
+
+<Accordion title="Request & Response Example">
+
+**Request:**
+
+```bash cURL
+curl -X POST https://api.protekt.com/v1/oauth/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "authorization_code",
+    "code": "auth_code_abc123",
+    "redirect_uri": "https://yourapp.com/callback",
+    "client_id": "client_123",
+    "client_secret": "secret_456"
+  }'
+```
+
+```javascript Node.js
+const protekt = require('@protekt/node');
+
+const tokens = await protekt.exchangeCode({
+  code: 'auth_code_abc123',
+  redirectUri: 'https://yourapp.com/callback'
+});
+```
+
+```python Python
+from protekt import Protekt
+
+client = Protekt(
+    client_id='client_123',
+    client_secret='secret_456'
+)
+
+tokens = client.exchange_code(
+    code='auth_code_abc123',
+    redirect_uri='https://yourapp.com/callback'
+)
+```
+
+**Response:**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "refresh_abc123xyz",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "scope": "openid profile email"
+}
+```
+
+</Accordion>
+
+### Response fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `access_token` | string | JWT for API authentication |
+| `refresh_token` | string | Token for refreshing access (valid 30 days) |
+| `token_type` | string | Always `Bearer` |
+| `expires_in` | integer | Access token lifetime in seconds |
+| `scope` | string | Space-separated granted permissions |
+
+<Warning>
+Authorization codes expire after 60 seconds and can only be used once.
+</Warning>
+
+
+## Refresh access token
+
+Request new access tokens before expiration to maintain uninterrupted access.
+
+**POST** `/oauth/refresh`
+
+### Request parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `grant_type` | string | Yes | Must be `refresh_token` |
+| `refresh_token` | string | Yes | Valid refresh token |
+| `client_id` | string | Yes | Your application client ID |
+| `client_secret` | string | Yes | Your application secret |
+
+<Accordion title="Request & Response Example">
+
+**Request:**
+
+```bash cURL
+curl -X POST https://api.protekt.com/v1/oauth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "refresh_token",
+    "refresh_token": "refresh_abc123xyz",
+    "client_id": "client_123",
+    "client_secret": "secret_456"
+  }'
+```
+
+```javascript Node.js
+const newTokens = await protekt.refreshToken('refresh_abc123xyz');
+
+// Update stored tokens
+accessToken = newTokens.accessToken;
+if (newTokens.refreshToken) {
+  refreshToken = newTokens.refreshToken;
+}
+```
+
+```python Python
+new_tokens = client.refresh_token('refresh_abc123xyz')
+
+access_token = new_tokens.access_token
+if new_tokens.refresh_token:
+    refresh_token = new_tokens.refresh_token
+```
+
+**Response:**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "refresh_new_789xyz",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+```
+
+</Accordion>
+
+<Tip>
+Refresh tokens may rotate for security. Always store the new `refresh_token` if returned.
+</Tip>
+
+
+## Revoke token
+
+Invalidate tokens when users log out. Revoking a refresh token automatically revokes all associated access tokens.
+
+**POST** `/oauth/revoke`
+
+### Request parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `token` | string | Yes | Access or refresh token to revoke |
+| `token_type_hint` | string | No | `access_token` or `refresh_token` |
+| `client_id` | string | Yes | Your application client ID |
+| `client_secret` | string | Yes | Your application secret |
+
+<Accordion title="Request & Response Example">
+
+**Request:**
+
+```bash cURL
+curl -X POST https://api.protekt.com/v1/oauth/revoke \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "refresh_abc123xyz",
+    "token_type_hint": "refresh_token",
+    "client_id": "client_123",
+    "client_secret": "secret_456"
+  }'
+```
+
+```javascript Node.js
+await protekt.revokeToken('refresh_abc123xyz');
+
+// Clear stored tokens
+accessToken = null;
+refreshToken = null;
+```
+
+```python Python
+client.revoke_token('refresh_abc123xyz')
+
+access_token = None
+refresh_token = None
+```
+
+**Response:**
+
+```json
+{
+  "revoked": true
+}
+```
+
+</Accordion>
+
+---
+
+## Error responses
+
+| Status | Error Code | Description | Solution |
+|--------|------------|-------------|----------|
+| 400 | `invalid_grant` | Code/token invalid or expired | Request new authorization |
+| 400 | `invalid_request` | Missing parameters | Check required fields |
+| 401 | `invalid_client` | Incorrect credentials | Verify client_id and secret |
+| 429 | `rate_limit_exceeded` | Too many requests | Wait for Retry-After period |
+
+
+## Rate limits
+
+**Per client ID:**
+- Token exchange: 10 requests/minute
+- Token refresh: 30 requests/minute
+- Token revocation: 20 requests/minute
+
+
+## Security best practices
+
+<Note>
+**Production checklist:**
+- Never expose `client_secret` in frontend code
+- Store refresh tokens in httpOnly cookies or encrypted storage
+- Use PKCE for mobile and single-page apps
+- Always use HTTPS for token endpoints
+- Implement token refresh before expiration
+- Rotate refresh tokens on each use
+</Note>
+
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Users API" icon="user" href="./users">
+    Manage user profiles
+  </Card>
+  <Card title="Sessions API" icon="clock" href="./sessions">
+    Track active sessions
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="../getting-started/quickstart">
+    5-minute integration
+  </Card>
+</CardGroup>

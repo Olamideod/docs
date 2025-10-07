@@ -1,340 +1,180 @@
 ---
+
 title: "Security Overview"
-description: "Comprehensive security features and best practices for Protekt"
----
+description: "How Protekt keeps your app and user data secure with encryption, RBAC, audit trails, and best practices."
+--------------------------------------------------------------------------------------------------------------------
 
-# Security Overview
+#  Security Overview
 
-Protekt is built with security as a first-class concern. This document provides an overview of our security features, architecture, and best practices.
+Protekt provides enterprise-grade security out of the box. In this guide, you’ll learn how Protekt protects user data, ensures safe API access, and helps you comply with modern security standards.
 
-## Security Features
+<Warning>Never expose secret keys or JWTs in the browser.</Warning>
 
-### Multi-Factor Authentication (MFA)
-
-Protekt supports multiple MFA methods to provide additional security layers:
-
-- **TOTP (Time-based One-Time Password)**: Compatible with authenticator apps like Google Authenticator, Authy, and Microsoft Authenticator
-- **SMS**: One-time codes sent via text message
-- **WebAuthn**: Passwordless authentication using biometrics or security keys
-- **Email**: Magic links for passwordless authentication
-
-### Attack Protection
-
-Our platform includes comprehensive protection against common attacks:
-
-#### Brute Force Protection
-- Rate limiting on login attempts
-- Progressive delays for failed attempts
-- Account lockout after multiple failures
-- CAPTCHA challenges for suspicious activity
-
-#### Phishing Protection
-- Domain verification for magic links
-- Suspicious login detection
-- Geographic location monitoring
-- Device fingerprinting
-
-#### Session Security
-- Secure session management
-- Automatic session expiration
-- Concurrent session limits
-- Session invalidation on password change
-
-### Data Protection
-
-#### Encryption
-- **Data at Rest**: AES-256 encryption for all stored data
-- **Data in Transit**: TLS 1.3 for all communications
-- **Token Encryption**: JWT tokens are encrypted and signed
-- **Password Hashing**: Argon2id with salt for password storage
-
-#### Privacy
-- GDPR compliance built-in
-- Data minimization principles
-- Right to be forgotten support
-- Privacy by design architecture
-
-## Security Architecture
-
-### Zero-Trust Model
-
-Protekt implements a zero-trust security model:
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Client App    │    │   Protekt API   │    │   User Store    │
-│                 │    │                 │    │                 │
-│ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
-│ │   Auth      │ │◄──►│ │   Auth      │ │◄──►│ │   Encrypted │ │
-│ │   Layer     │ │    │ │   Service   │ │    │ │   Database  │ │
-│ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │
-│                 │    │                 │    │                 │
-│ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
-│ │   Rate      │ │    │ │   Rate      │ │    │ │   Audit     │ │
-│ │   Limiting  │ │    │ │   Limiting  │ │    │ │   Logs      │ │
-│ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-### Security Layers
-
-1. **Network Security**
-   - DDoS protection
-   - Web Application Firewall (WAF)
-   - IP allowlisting/blocklisting
-   - Geographic restrictions
-
-2. **Application Security**
-   - Input validation and sanitization
-   - SQL injection prevention
-   - XSS protection
-   - CSRF protection
-
-3. **Authentication Security**
-   - Strong password policies
-   - MFA enforcement
-   - Session management
-   - Token security
-
-4. **Data Security**
-   - Encryption at rest and in transit
-   - Access controls
-   - Audit logging
-   - Data backup and recovery
-
-## Compliance
-
-### SOC 2 Type II
-
-Protekt maintains SOC 2 Type II compliance, ensuring:
-
-- **Security**: Protection against unauthorized access
-- **Availability**: System availability and performance
-- **Processing Integrity**: Accurate and complete processing
-- **Confidentiality**: Protection of confidential information
-- **Privacy**: Protection of personal information
-
-### GDPR Compliance
-
-Full GDPR compliance including:
-
-- **Data Subject Rights**: Access, rectification, erasure, portability
-- **Consent Management**: Granular consent tracking
-- **Data Processing Records**: Detailed processing activities
-- **Breach Notification**: 72-hour notification requirement
-- **Privacy Impact Assessments**: Regular security assessments
-
-### HIPAA Compliance
-
-For healthcare applications:
-
-- **PHI Protection**: Protected Health Information safeguards
-- **Access Controls**: Role-based access to health data
-- **Audit Trails**: Complete audit logging
-- **Business Associate Agreements**: HIPAA-compliant contracts
-
-## Security Best Practices
-
-### For Developers
-
-#### Secure Authentication Implementation
-
-```javascript
-// ✅ Good: Use HTTPS and secure cookies
-const protekt = new Protekt({
-  domain: 'your-tenant.protekt.com',
-  clientId: 'your-client-id',
-  secureCookies: true,
-  sameSite: 'strict'
-});
-
-// ❌ Bad: Don't store tokens in localStorage
-localStorage.setItem('token', accessToken); // Insecure
-
-// ✅ Good: Use secure session storage or HTTP-only cookies
-sessionStorage.setItem('token', accessToken); // Better
-```
-
-#### Token Management
-
-```javascript
-// ✅ Good: Implement token refresh
-async function refreshToken() {
-  try {
-    const newTokens = await protekt.auth.refresh(refreshToken);
-    updateTokens(newTokens);
-  } catch (error) {
-    // Redirect to login if refresh fails
-    window.location.href = '/login';
-  }
-}
-
-// ✅ Good: Validate tokens on each request
-async function validateToken(token) {
-  try {
-    const user = await protekt.auth.getUser(token);
-    return user;
-  } catch (error) {
-    throw new Error('Invalid token');
-  }
-}
-```
-
-#### Error Handling
-
-```javascript
-// ✅ Good: Don't expose sensitive information in errors
-try {
-  await protekt.auth.login(credentials);
-} catch (error) {
-  // ❌ Bad: Don't log sensitive data
-  console.log('Login failed:', credentials);
-  
-  // ✅ Good: Log only error codes
-  console.log('Login failed:', error.code);
-  
-  // ✅ Good: Show user-friendly messages
-  showError('Invalid email or password');
-}
-```
-
-### For Administrators
-
-#### Access Control
-
-- **Principle of Least Privilege**: Grant minimum necessary permissions
-- **Role-Based Access Control (RBAC)**: Use predefined roles
-- **Regular Access Reviews**: Audit user permissions quarterly
-- **Separation of Duties**: Separate admin and user functions
-
-#### Monitoring and Logging
-
-```javascript
-// Enable comprehensive logging
-const protekt = new Protekt({
-  domain: 'your-tenant.protekt.com',
-  clientId: 'your-client-id',
-  logging: {
-    level: 'info',
-    events: ['login', 'logout', 'mfa', 'password_change'],
-    retention: '90days'
-  }
-});
-```
-
-#### Security Policies
-
-- **Password Policy**: Minimum 12 characters, complexity requirements
-- **Session Timeout**: 8 hours for regular users, 2 hours for admins
-- **MFA Enforcement**: Required for all admin accounts
-- **Device Management**: Track and manage authorized devices
-
-## Security Monitoring
-
-### Real-Time Monitoring
-
-Protekt provides real-time security monitoring:
-
-- **Anomaly Detection**: Machine learning-based threat detection
-- **Geographic Monitoring**: Flag suspicious login locations
-- **Device Tracking**: Monitor new device logins
-- **Behavioral Analysis**: Detect unusual user behavior patterns
-
-### Security Alerts
-
-Configure alerts for:
-
-- Failed login attempts
-- MFA bypass attempts
-- Suspicious IP addresses
-- Unusual access patterns
-- Data export requests
-
-### Incident Response
-
-Our security team provides:
-
-- 24/7 monitoring and response
-- Automated threat detection
-- Manual investigation capabilities
-- Customer notification procedures
-- Incident documentation and reporting
-
-## Penetration Testing
-
-### Regular Security Assessments
-
-- **Quarterly Penetration Testing**: External security assessments
-- **Vulnerability Scanning**: Automated security scans
-- **Code Security Reviews**: Manual code analysis
-- **Infrastructure Audits**: Cloud security assessments
-
-### Bug Bounty Program
-
-We maintain a responsible disclosure program:
-
-- **Scope**: All public-facing applications
-- **Rewards**: Up to $10,000 for critical vulnerabilities
-- **Response Time**: 24 hours for critical issues
-- **Recognition**: Public acknowledgment for researchers
-
-## Data Breach Response
-
-### Incident Response Plan
-
-1. **Detection**: Automated and manual threat detection
-2. **Assessment**: Impact analysis and severity classification
-3. **Containment**: Immediate threat isolation
-4. **Eradication**: Root cause removal
-5. **Recovery**: Service restoration
-6. **Lessons Learned**: Process improvement
-
-### Customer Notification
-
-- **72-Hour Notification**: GDPR compliance requirement
-- **Transparent Communication**: Clear, honest updates
-- **Remediation Steps**: Actionable guidance for customers
-- **Support**: Dedicated support during incidents
-
-## Security Resources
-
-### Documentation
-
-- [Multi-Factor Authentication Setup](/how-to-guides/enable-mfa)
-- [Attack Protection Configuration](/how-to-guides/attack-protection)
-- [Role-Based Access Control](/how-to-guides/setup-rbac)
-- [Custom Claims and Hooks](/how-to-guides/custom-claims)
-
-### Support
-
-- **Security Team**: security@protekt.com
-- **Emergency Contact**: +1-555-SECURITY
-- **Security Blog**: [security.protekt.com](https://security.protekt.com)
-- **Security Updates**: [status.protekt.com](https://status.protekt.com)
-
-### Compliance Reports
-
-- **SOC 2 Report**: Available to enterprise customers
-- **Penetration Test Results**: Annual reports available
-- **Compliance Certificates**: GDPR, HIPAA, SOC 2
-- **Security Whitepaper**: Detailed security architecture
-
-## Security Roadmap
-
-### Upcoming Features
-
-- **Hardware Security Module (HSM)**: Enhanced key management
-- **Advanced Threat Protection**: AI-powered threat detection
-- **Zero-Knowledge Proofs**: Privacy-preserving authentication
-- **Post-Quantum Cryptography**: Future-proof encryption
-
-### Continuous Improvement
-
-- **Monthly Security Reviews**: Regular architecture assessments
-- **Quarterly Penetration Testing**: Ongoing security validation
-- **Annual Security Training**: Team security education
-- **Industry Collaboration**: Security community participation
+<Tip>Store access tokens in secure HTTP-only cookies, not `localStorage`.</Tip>
 
 ---
 
-For specific security implementation guidance, see our [Security How-To Guides](/how-to-guides) or contact our security team at [security@protekt.com](mailto:security@protekt.com). 
+##  Why Security Matters
+
+Security breaches cost companies millions. But good security doesn’t have to slow you down. Protekt simplifies secure-by-default development:
+
+* End-to-end encryption for sensitive data
+* Role-based access control (RBAC)
+* Real-time audit logging
+* Secret management and key rotation
+* OWASP Top 10 compliance out-of-the-box
+
+<Info>Protekt automatically monitors API abuse and suspicious behavior patterns across your endpoints.</Info>
+
+---
+
+##  Authentication & Token Security
+
+Protekt uses JWTs (JSON Web Tokens) for authentication, signed and optionally encrypted.
+
+**Key practices:**
+
+* Tokens are short-lived and require refresh tokens for long sessions.
+* Signing keys rotate every 90 days.
+* Device-level fingerprinting reduces token hijacking.
+
+<Warning>Always validate JWTs on the server before trusting any claims.</Warning>
+
+### Sample Token Payload
+
+```json
+{
+  "sub": "user_123",
+  "role": "admin",
+  "exp": 1699238432,
+  "aud": "protekt.app"
+}
+```
+
+Use environment variables like `PROTEKT_PUBLIC_KEY` and `PROTEKT_SECRET_KEY` for token verification.
+
+<details>
+<summary>Show advanced token verification setup</summary>
+
+```ts
+import { verifyToken } from "@protekt/node";
+
+const payload = verifyToken(token, process.env.PROTEKT_PUBLIC_KEY);
+```
+
+</details>
+
+---
+
+##  Role-Based Access Control (RBAC)
+
+RBAC lets you define access rules based on roles such as `admin`, `user`, `editor`, etc. This ensures:
+
+* Admin-only access to sensitive dashboards
+* User-specific access to personal data
+* Fine-grained permissions for teams
+
+Read the full [RBAC setup guide →](/how-to-guides/setup-rbac)
+
+```ts
+if (!hasRole(user, "admin")) {
+  return res.status(403).send("Forbidden");
+}
+```
+
+<Info>Protekt supports dynamic permission policies via API and UI.</Info>
+
+---
+
+##  Audit Trails
+
+Every authentication and role change is logged securely.
+
+**Example logs:**
+
+```json
+{
+  "event": "role.updated",
+  "user": "user_123",
+  "actor": "admin_456",
+  "timestamp": "2025-08-11T12:00:00Z"
+}
+```
+
+Audit logs are tamper-proof and exportable to SIEM tools like Datadog, Splunk, or AWS CloudTrail.
+
+---
+
+##  Key Rotation & Secret Management
+
+You can rotate keys and secrets from the Protekt dashboard.
+
+* Rotate signing keys
+* Regenerate client secrets
+* Use API to disable compromised keys
+
+```bash
+curl -X POST \
+  https://api.protekt.dev/v1/keys/rotate \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+<Warning>Never hardcode secrets into your source code. Use environment variables instead.</Warning>
+
+---
+
+##  Threat Detection & Abuse Monitoring
+
+Protekt includes real-time threat detection:
+
+* IP-based rate limiting
+* Behavior anomaly detection
+* Brute-force login protection
+* Email alerts for unusual activity
+
+**Diagram: Attack prevention flow**
+
+```mermaid
+graph TD
+    A[Login Attempt] -->|Brute-force?| B{Rate Limited?}
+    B -- Yes --> C[Blocked by Protekt]
+    B -- No --> D{Behavior Anomaly?}
+    D -- Yes --> E[Flagged and Alerted]
+    D -- No --> F[Successful Login]
+```
+
+---
+
+##  API Security with OpenAPI
+
+Protekt automatically validates API requests against your OpenAPI schema.
+
+```ts
+app.post("/create-user", authenticate, validateSchema("createUser"), handler);
+```
+
+<SwaggerUI specUrl="/openapi.yaml" />
+
+---
+## Next
+
+<CardGroup cols={2}>
+<Card
+  title="Security Best Practices"
+  icon="shield"
+  href="/security/best-practices"
+>
+  10-step checklist to lock down your auth
+</Card>
+<Card
+  title="FAQs"
+  icon="book"
+  href="/faqs"
+>
+  Common asked questions
+</Card>
+</CardGroup>
+
+---
+
+Want to go deeper? [Ask anything about Protekt security →](/search)

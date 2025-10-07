@@ -1,0 +1,355 @@
+---
+title: "Protekt API Overview"
+description: "Complete guide to Protekt's REST API - authentication, endpoints, rate limits, and examples"
+---
+
+# Protekt API Overview
+
+Build auth into any application with Protekt's REST API. Simple endpoints, predictable responses, and comprehensive error handling make integration straightforward.
+
+<img src="/images/api-architecture-diagram.png" alt="Architecture diagram showing client applications connecting to Protekt API endpoints, with authentication flow arrows and response data structures" />
+
+## API Fundamentals
+
+Protekt uses standard REST conventions with JSON payloads. All endpoints are secured with API keys and return consistent response formats.
+
+**Base URL**: `https://api.protekt.com/v1`
+**Content-Type**: `application/json`
+**Authentication**: Bearer token or API key
+
+## Architecture Overview
+```mermaid
+sequenceDiagram
+    participant App as Your App
+    participant API as Protekt API
+    participant DB as User Database
+    
+    App->>API: POST /auth/login
+    API->>DB: Validate credentials
+    DB->>API: User data
+    API->>App: JWT + user profile
+    
+    Note over App,API: Subsequent requests use JWT
+    App->>API: GET /users/profile (with JWT)
+    API->>App: Protected user data
+```
+
+## Authentication Methods
+
+Protekt supports two authentication methods depending on your use case.
+
+<Tabs>
+<Tab title="API Key (Server-side)">
+<Info>Use API keys for server-to-server communication and administrative operations.</Info>
+
+```bash
+curl -X GET "https://api.protekt.com/v1/users" \
+  -H "Authorization: Bearer sk_live_your_secret_key" \
+  -H "Content-Type: application/json"
+```
+
+**Best for**: Backend services, admin dashboards, batch operations
+</Tab>
+
+<Tab title="JWT Token (Client-side)">
+<Info>Use JWT tokens for user-specific operations after login.</Info>
+
+```bash
+curl -X GET "https://api.protekt.com/v1/user/profile" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json"
+```
+
+**Best for**: Frontend applications, mobile apps, user-specific data
+</Tab>
+</Tabs>
+
+<Warning>
+**Never expose secret keys**: API keys starting with `sk_` should only be used on your backend servers.
+</Warning>
+
+## Core Endpoints
+
+Protekt's API is organized into logical groups. Each group handles specific aspects of authentication and user management.
+
+<img src="/images/api-endpoints-map.png" alt="Visual map of API endpoints organized by category: Authentication, Users, Organizations, and Admin, with HTTP methods color-coded" />
+
+### Authentication Endpoints
+
+Handle user login, signup, and session management.
+
+```javascript Login user
+POST /auth/login
+{
+  "email": "user@example.com",
+  "password": "secure-password"
+}
+
+// Response
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "usr_1234567890",
+    "email": "user@example.com",
+    "name": "John Doe"
+  }
+}
+```
+
+### User Management Endpoints
+
+Create, update, and manage user accounts and profiles.
+
+```javascript Get user profile
+GET /users/{user_id}
+
+// Update user
+PATCH /users/{user_id}
+{
+  "name": "Updated Name",
+  "metadata": {
+    "department": "Engineering"
+  }
+}
+```
+
+### Organization Endpoints
+
+Manage multi-tenant organizations and member relationships.
+
+```javascript Create organization
+POST /organizations
+{
+  "name": "Acme Corp",
+  "domain": "acme.com",
+  "settings": {
+    "sso_required": true
+  }
+}
+```
+
+## Rate Limits & Quotas
+
+Protekt uses sliding window rate limits to ensure fair usage and system stability.
+
+<Tabs>
+<Tab title="Standard Limits">
+**Per API Key:**
+- 1000 requests per minute
+- 10,000 requests per hour
+- Burst capacity: 100 requests per second
+
+**Per IP Address:**
+- 100 requests per minute (unauthenticated)
+- Automatic scaling based on usage patterns
+</Tab>
+
+<Tab title="Enterprise Limits">
+**Custom Quotas:**
+- Negotiated limits based on your needs
+- Dedicated rate limit pools
+- Priority request handling
+- Custom burst allowances
+</Tab>
+</Tabs>
+
+```mermaid
+graph LR
+    A[Request] --> B{Rate Limit Check}
+    B -->|Under Limit| C[Process Request]
+    B -->|Over Limit| D[Return 429 Error]
+    C --> E[Update Counter]
+    D --> F[Include Retry-After Header]
+```
+
+**Rate limit headers** are included in every response:
+
+```http
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1640995200
+Retry-After: 60
+```
+
+<Tip>
+**Rate limit best practices**: Implement exponential backoff when you receive 429 responses. Most SDKs handle this automatically.
+</Tip>
+
+## Response Format
+
+All API responses follow a consistent structure for predictable parsing and error handling.
+
+<CodeGroup>
+```javascript Success Response
+{
+  "success": true,
+  "data": {
+    "id": "usr_1234567890",
+    "email": "user@example.com",
+    "created_at": "2024-01-15T10:30:00Z"
+  },
+  "meta": {
+    "request_id": "req_abc123",
+    "timestamp": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+```javascript Error Response
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_CREDENTIALS",
+    "message": "Email or password is incorrect",
+    "details": {
+      "field": "password",
+      "reason": "too_short"
+    }
+  },
+  "meta": {
+    "request_id": "req_def456",
+    "timestamp": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+```javascript List Response with Pagination
+{
+  "success": true,
+  "data": [
+    {"id": "usr_001", "email": "user1@example.com"},
+    {"id": "usr_002", "email": "user2@example.com"}
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 25,
+    "total": 150,
+    "total_pages": 6,
+    "has_next": true
+  }
+}
+```
+</CodeGroup>
+
+## Error Codes
+
+Protekt uses standard HTTP status codes plus specific error codes for detailed debugging.
+
+<Tabs>
+<Tab title="Authentication Errors">
+- `401 UNAUTHORIZED` - Invalid or missing API key
+- `403 FORBIDDEN` - Valid key but insufficient permissions
+- `INVALID_CREDENTIALS` - Login failed
+- `TOKEN_EXPIRED` - JWT token needs refresh
+</Tab>
+
+<Tab title="Validation Errors">
+- `400 BAD_REQUEST` - Malformed request
+- `MISSING_REQUIRED_FIELD` - Required field not provided
+- `INVALID_FORMAT` - Field format is incorrect
+- `EMAIL_ALREADY_EXISTS` - User already registered
+</Tab>
+
+<Tab title="System Errors">
+- `429 TOO_MANY_REQUESTS` - Rate limit exceeded
+- `500 INTERNAL_ERROR` - Server error (rare)
+- `503 SERVICE_UNAVAILABLE` - Maintenance mode
+</Tab>
+</Tabs>
+
+<img src="/images/error-handling-flowchart.png" alt="Flowchart showing error handling logic: check status code, parse error response, implement retry logic for 429/5xx errors" />
+
+## Pagination
+
+List endpoints support cursor-based pagination for consistent results even when data changes.
+
+```javascript Pagination
+// First page
+GET /users?limit=25
+
+// Next page using cursor
+GET /users?limit=25&cursor=eyJpZCI6InVzciIsImNyZWF0ZWQi
+
+// Response includes pagination info
+{
+  "data": [...],
+  "pagination": {
+    "has_next": true,
+    "next_cursor": "eyJpZCI6InVzciIsImNyZWF0ZWQi...",
+    "limit": 25
+  }
+}
+```
+
+<Tip>
+**Cursor vs offset**: Protekt uses cursors instead of page numbers to avoid duplicate results when data is added during pagination.
+</Tip>
+
+## Webhooks & Events
+
+Subscribe to real-time events for user actions, authentication events, and system changes.
+
+```javascript webhook payload
+{
+  "event": "user.login",
+  "data": {
+    "user_id": "usr_1234567890",
+    "ip_address": "192.168.1.1",
+    "user_agent": "Mozilla/5.0...",
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "webhook_id": "wh_abc123"
+}
+```
+
+**Available events:**
+- `user.created` - New user registration
+- `user.login` - Successful authentication
+- `user.logout` - Session ended
+- `organization.member_added` - User joined organization
+- `session.expired` - Token expired
+
+## Interactive API Explorer
+
+Test endpoints directly in your browser with our built-in API explorer.
+
+<SwaggerUI specUrl="/openapi.yaml" />
+
+## SDK Recommendations
+
+While you can call the API directly, our SDKs provide better developer experience with built-in error handling, retries, and type safety.
+
+<CardGroup cols={2}>
+<Card title="JavaScript SDK" icon="js" href="/sdks/javascript">
+For React, Vue, and vanilla JS applications
+</Card>
+<Card title="Node.js SDK" icon="node-js" href="/sdks/node">
+Backend services with Express, Fastify, etc.
+</Card>
+<Card title="Python SDK" icon="python" href="/sdks/python">
+Django, Flask, and FastAPI integrations
+</Card>
+<Card title="Go SDK" icon="golang" href="/sdks/go">
+High-performance backend services
+</Card>
+</CardGroup>
+
+## Next Steps
+
+Now that you understand Protekt's API structure, dive into specific implementation guides.
+
+<CardGroup cols={2}>
+<Card title="Authentication Guide" icon="key" href="/tutorials/first-integration">
+Build your first login flow
+</Card>
+<Card title="User Management" icon="users" href="/how-to-guides/setup-rbac">
+Set up roles and permissions
+</Card>
+<Card title="Security Best Practices" icon="shield-check" href="/security/best-practices">
+Secure your API integration
+</Card>
+<Card title="Troubleshooting" icon="wrench" href="/troubleshooting/common-errors">
+Common API integration issues
+</Card>
+</CardGroup>

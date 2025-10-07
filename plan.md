@@ -26,29 +26,11 @@ We’re building a **single website** that lets developers plug Protekt into the
 |----|------------|----------------|
 | A1 | Protekt provides a REST API and SDKs (Node, Python, Go) | Aligns with dev expectations for auth tools |
 | A2 | JWT-based authentication is core | Common auth strategy — useful for guides |
-| A3 | Docusaurus is the preferred doc framework | DevX-friendly, versionable, Markdown-powered |
+| A3 | Mintlify is the preferred doc framework | DevX-friendly, versionable, Markdown-powered |
 | A4 | Target devs are technical enough to self-serve | Allows for quick-start, reference-first flow |
 | A5 | Versioning required from day one | Prevents migration pain |
 
----
 
-## NEW – Visual Roadmap (Mermaid Gantt)
-```mermaid
-gantt
-    title Protekt Docs Roll-out (6 Weeks)
-    dateFormat  YYYY-MM-DD
-    section Discovery
-    Repo scaffold          :a1, 2024-08-01, 1d
-    section Content
-    Quick-start + snippets :2024-08-02, 5d
-    API + SDK reference    :2024-08-08, 5d
-    section Polish
-    UX review, linter      :2024-08-15, 3d
-    PM onboarding          :2024-08-19, 2d
-    section Launch
-    SEO, Algolia, GA       :2024-08-22, 4d
-    Public announcement    :milestone, 2024-08-26, 0d
-```
 ---
 
 ## Developer Journey Map
@@ -64,7 +46,42 @@ gantt
 
 ## Documentation Architecture (Diátaxis)
 ```
+docs/                    
+├── Introduction.mdx                  # Top-level intro page
+├── getting-started/
+│   ├── overview.mdx
+│   └── quickstart.mdx
+├── tutorials/
+│   ├── first-integration.mdx
+│   ├── secure-your-app.mdx
+│   ├── mobile-app.mdx
+│   ├── server-to-server.mdx
+│   └── b2b-organizations.mdx
+├── how-to-guides/
+│   ├── enable-mfa.mdx
+│   ├── send-magic-link.mdx
+│   ├── setup-rbac.mdx
+│   ├── implement-sso.mdx
+│   └── migrate-from-auth0.mdx
+├── reference/
+│   └── api-overview.mdx
+├── sdks/
+│   ├── javascript.mdx
+│   ├── node.mdx
+│   ├── python.mdx
+│   └── go.mdx
+├── security/
+│   └── overview.mdx
+├── troubleshooting/
+│   ├── common-errors.mdx
+│   └── debugging-guide.mdx
+├── support/
+│   ├── faq.mdx
+│   └── glossary.mdx
 
+
+
+Recommended UPGRADE
 ```
 docs/
 ├── landing-page.mdx
@@ -123,7 +140,7 @@ docs/
 ---
 
 ## Tooling & Infrastructure
-- **Framework**: Docusaurus v3 (Markdown + MDX)
+- **Framework**: Mintlify Markdown + MDX)
 - **Hosting**: GitHub Pages or Vercel (CI-integrated)
 - **CI/CD**: GitHub Actions – auto-build + lint
 - **Search**: Algolia DocSearch (free OSS)
@@ -188,7 +205,7 @@ docs/
 ### **Stage 1: Setup Documentation Site**
 - Scaffold project using Docusaurus CLI
 - Implement folder structure from above
-- Configure `docusaurus.config.js` and `sidebars.js`
+- Configure `Mintlify
 
 ### **Stage 2: Write Required Docs**
 - `index.md`: Welcome and overview page

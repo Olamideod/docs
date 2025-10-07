@@ -1,0 +1,511 @@
+---
+title: "Python SDK"
+description: "Official Python SDK for Protekt authentication and authorization"
+---
+
+# Python SDK
+
+The official Python SDK for Protekt provides a simple and secure way to integrate authentication and authorization into your Python applications.
+
+## Installation
+
+```bash
+pip install protekt-python
+# or
+pip install git+https://github.com/protekt/python.git
+```
+
+## Quick Start
+
+```python
+from protekt import Protekt
+
+protekt = Protekt(
+    domain="your-tenant.protekt.com",
+    client_id="your-client-id",
+    client_secret="your-client-secret"
+)
+
+# Authenticate a user
+user = protekt.auth.login(
+    email="user@example.com",
+    password="password123"
+)
+
+print(f"User authenticated: {user}")
+```
+
+## Configuration
+
+### Initialize the SDK
+
+```python
+from protekt import Protekt
+
+protekt = Protekt(
+    domain="your-tenant.protekt.com",      # Your Protekt domain
+    client_id="your-client-id",            # Your application client ID
+    client_secret="your-client-secret",    # Your application client secret
+    redirect_uri="http://localhost:3000/callback",  # OAuth redirect URI
+    scope="openid profile email"           # OAuth scopes
+)
+```
+
+### Environment Variables
+
+You can also configure the SDK using environment variables:
+
+```bash
+export PROTEKT_DOMAIN=your-tenant.protekt.com
+export PROTEKT_CLIENT_ID=your-client-id
+export PROTEKT_CLIENT_SECRET=your-client-secret
+export PROTEKT_REDIRECT_URI=http://localhost:3000/callback
+```
+
+```python
+from protekt import Protekt
+
+protekt = Protekt()  # Uses environment variables automatically
+```
+
+## Authentication
+
+### Password-based Authentication
+
+```python
+# Login with email and password
+result = protekt.auth.login(
+    email="user@example.com",
+    password="password123"
+)
+
+print(f"Access token: {result.access_token}")
+print(f"User: {result.user}")
+```
+
+### Social Login
+
+```python
+# Login with Google
+result = protekt.auth.login_with_provider("google")
+
+# Login with GitHub
+result = protekt.auth.login_with_provider("github")
+```
+
+### OAuth Flow
+
+```python
+# Generate authorization URL
+auth_url = protekt.auth.get_authorization_url(
+    scope="openid profile email",
+    state="random-state-string"
+)
+
+# Handle callback (in Flask/Django view)
+tokens = protekt.auth.handle_callback(request.args)
+
+# Get user profile
+user = protekt.auth.get_user(tokens.access_token)
+```
+
+### Magic Link Authentication
+
+```python
+# Send magic link
+protekt.auth.send_magic_link(
+    email="user@example.com",
+    redirect_uri="http://localhost:3000/verify"
+)
+
+# Verify magic link token
+user = protekt.auth.verify_magic_link(token)
+```
+
+## User Management
+
+### Get User Profile
+
+```python
+user = protekt.users.get_profile(access_token)
+print(f"User: {user}")
+```
+
+### Update User Profile
+
+```python
+updated_user = protekt.users.update_profile(
+    access_token,
+    name="John Doe",
+    picture="https://example.com/avatar.jpg"
+)
+```
+
+### Get User by ID
+
+```python
+user = protekt.users.get_by_id("user-id")
+```
+
+## Organizations
+
+### List User Organizations
+
+```python
+organizations = protekt.organizations.list(access_token)
+```
+
+### Get Organization
+
+```python
+org = protekt.organizations.get("org-id")
+```
+
+### Create Organization
+
+```python
+org = protekt.organizations.create(
+    name="My Organization",
+    display_name="My Org Display Name"
+)
+```
+
+## Roles and Permissions
+
+### List Roles
+
+```python
+roles = protekt.roles.list()
+```
+
+### Create Role
+
+```python
+role = protekt.roles.create(
+    name="admin",
+    description="Administrator role",
+    permissions=["read:users", "write:users", "delete:users"]
+)
+```
+
+### Assign Role to User
+
+```python
+protekt.roles.assign_to_user("user-id", "role-id")
+```
+
+## Multi-Factor Authentication
+
+### Enable MFA
+
+```python
+# Enable TOTP
+totp_setup = protekt.mfa.enable_totp(access_token)
+
+# Enable SMS
+protekt.mfa.enable_sms(access_token, "+1234567890")
+
+# Enable WebAuthn
+webauthn_setup = protekt.mfa.enable_webauthn(access_token)
+```
+
+### Verify MFA
+
+```python
+# Verify TOTP code
+protekt.mfa.verify_totp(access_token, "123456")
+
+# Verify SMS code
+protekt.mfa.verify_sms(access_token, "123456")
+```
+
+## Error Handling
+
+```python
+try:
+    user = protekt.auth.login(
+        email="user@example.com",
+        password="wrong-password"
+    )
+except ProtektError as error:
+    if error.code == "INVALID_CREDENTIALS":
+        print("Invalid email or password")
+    elif error.code == "MFA_REQUIRED":
+        print("MFA verification required")
+    else:
+        print(f"Unexpected error: {error.message}")
+```
+
+## Django Integration
+
+### Django Settings
+
+```python
+# settings.py
+PROTEKT_CONFIG = {
+    'DOMAIN': 'your-tenant.protekt.com',
+    'CLIENT_ID': 'your-client-id',
+    'CLIENT_SECRET': 'your-client-secret',
+    'REDIRECT_URI': 'http://localhost:8000/callback'
+}
+```
+
+### Django Views
+
+```python
+from django.shortcuts import redirect
+from django.http import JsonResponse
+from protekt import Protekt
+
+def login_view(request):
+    protekt = Protekt()
+    auth_url = protekt.auth.get_authorization_url(
+        scope="openid profile email"
+    )
+    return redirect(auth_url)
+
+def callback_view(request):
+    protekt = Protekt()
+    try:
+        tokens = protekt.auth.handle_callback(request.GET)
+        user = protekt.auth.get_user(tokens.access_token)
+        
+        # Store in session
+        request.session['access_token'] = tokens.access_token
+        request.session['user'] = user
+        
+        return redirect('/dashboard')
+    except ProtektError as error:
+        return JsonResponse({'error': error.message}, status=400)
+
+def dashboard_view(request):
+    if 'access_token' not in request.session:
+        return redirect('/login')
+    
+    protekt = Protekt()
+    try:
+        user = protekt.auth.get_user(request.session['access_token'])
+        return JsonResponse({'user': user})
+    except ProtektError:
+        return redirect('/login')
+```
+
+### Django Middleware
+
+```python
+from django.utils.deprecation import MiddlewareMixin
+from protekt import Protekt
+
+class ProtektMiddleware(MiddlewareMixin):
+    def process_request(self, request):
+        if 'access_token' in request.session:
+            protekt = Protekt()
+            try:
+                user = protekt.auth.get_user(request.session['access_token'])
+                request.user = user
+            except ProtektError:
+                del request.session['access_token']
+                request.user = None
+```
+
+## Flask Integration
+
+### Flask App
+
+```python
+from flask import Flask, redirect, request, session, jsonify
+from protekt import Protekt
+
+app = Flask(__name__)
+app.secret_key = 'your-secret-key'
+
+protekt = Protekt(
+    domain="your-tenant.protekt.com",
+    client_id="your-client-id",
+    client_secret="your-client-secret",
+    redirect_uri="http://localhost:5000/callback"
+)
+
+@app.route('/login')
+def login():
+    auth_url = protekt.auth.get_authorization_url(
+        scope="openid profile email"
+    )
+    return redirect(auth_url)
+
+@app.route('/callback')
+def callback():
+    try:
+        tokens = protekt.auth.handle_callback(request.args)
+        user = protekt.auth.get_user(tokens.access_token)
+        
+        session['access_token'] = tokens.access_token
+        session['user'] = user
+        
+        return redirect('/dashboard')
+    except ProtektError as error:
+        return jsonify({'error': error.message}), 400
+
+@app.route('/dashboard')
+def dashboard():
+    if 'access_token' not in session:
+        return redirect('/login')
+    
+    try:
+        user = protekt.auth.get_user(session['access_token'])
+        return jsonify({'user': user})
+    except ProtektError:
+        return redirect('/login')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+## FastAPI Integration
+
+```python
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.security import HTTPBearer
+from protekt import Protekt
+
+app = FastAPI()
+security = HTTPBearer()
+
+protekt = Protekt(
+    domain="your-tenant.protekt.com",
+    client_id="your-client-id"
+)
+
+async def get_current_user(token: str = Depends(security)):
+    try:
+        user = protekt.auth.get_user(token.credentials)
+        return user
+    except ProtektError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/protected")
+async def protected_route(user = Depends(get_current_user)):
+    return {"message": f"Hello, {user.name}"}
+```
+
+## Async Support
+
+The SDK supports async/await for better performance:
+
+```python
+import asyncio
+from protekt import AsyncProtekt
+
+async def main():
+    protekt = AsyncProtekt(
+        domain="your-tenant.protekt.com",
+        client_id="your-client-id"
+    )
+    
+    # Async authentication
+    user = await protekt.auth.login(
+        email="user@example.com",
+        password="password123"
+    )
+    
+    # Async user management
+    profile = await protekt.users.get_profile(user.access_token)
+    
+    print(f"User profile: {profile}")
+
+# Run async function
+asyncio.run(main())
+```
+
+## WebSocket Support
+
+```python
+import asyncio
+from protekt import ProtektWebSocket
+
+async def websocket_client():
+    ws = ProtektWebSocket(
+        domain="your-tenant.protekt.com",
+        access_token="your-access-token"
+    )
+    
+    async with ws:
+        await ws.send({
+            "type": "subscribe",
+            "channel": "user-updates"
+        })
+        
+        async for message in ws:
+            print(f"Received: {message}")
+
+asyncio.run(websocket_client())
+```
+
+## Examples
+
+### Complete Authentication Flow
+
+```python
+from flask import Flask, redirect, request, session, jsonify
+from protekt import Protekt, ProtektError
+
+app = Flask(__name__)
+app.secret_key = 'your-secret-key'
+
+protekt = Protekt(
+    domain="your-tenant.protekt.com",
+    client_id="your-client-id",
+    client_secret="your-client-secret",
+    redirect_uri="http://localhost:5000/callback"
+)
+
+@app.route('/login')
+def login():
+    auth_url = protekt.auth.get_authorization_url(
+        scope="openid profile email"
+    )
+    return redirect(auth_url)
+
+@app.route('/callback')
+def callback():
+    try:
+        tokens = protekt.auth.handle_callback(request.args)
+        user = protekt.auth.get_user(tokens.access_token)
+        
+        session['access_token'] = tokens.access_token
+        session['user'] = user
+        
+        return redirect('/dashboard')
+    except ProtektError as error:
+        return jsonify({'error': error.message}), 400
+
+@app.route('/dashboard')
+def dashboard():
+    if 'access_token' not in session:
+        return redirect('/login')
+    
+    try:
+        user = protekt.auth.get_user(session['access_token'])
+        return jsonify({'user': user})
+    except ProtektError:
+        return redirect('/login')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/login')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+## API Reference
+
+For detailed API documentation, see the [API Reference](/reference/redocusaurus).
+
+## Support
+
+- **Documentation**: [docs.protekt.com](https://docs.protekt.com)
+- **GitHub**: [github.com/protekt/python](https://github.com/protekt/python)
+- **PyPI**: [pypi.org/project/protekt-python](https://pypi.org/project/protekt-python)
+- **Support**: [support@protekt.com](mailto:support@protekt.com) 

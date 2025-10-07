@@ -1,360 +1,146 @@
 ---
 title: "Common Errors"
-description: "Troubleshoot common authentication and integration issues"
+description: "Troubleshoot common issues with Protekt integration quickly"
 ---
 
-# Common Errors
+<Warning>Always test in a development environment before applying fixes to production.</Warning>
 
-This guide helps you resolve the most common issues when integrating Protekt authentication.
+Protekt provides clear error messages to help you debug issues fast. This guide explains the most common integration errors and how to fix them.
 
-## Authentication Errors
+##  Invalid or Missing API Key
 
-### Invalid Client ID
+This typically means your request didn't include a valid key.
 
-**Error**: `invalid_client`
-
-**Cause**: The client ID provided is incorrect or doesn't exist.
-
-**Solution**:
-1. Verify your client ID in the Protekt dashboard
-2. Check that you're using the correct environment (development/production)
-3. Ensure the client ID matches your application configuration
-
-```javascript
-// Correct configuration
-const protekt = new Protekt({
-  domain: 'your-tenant.protekt.com',
-  clientId: 'your-actual-client-id', // Verify this value
-  redirectUri: 'https://your-app.com/callback'
-});
+<CodeGroup>
+```ts API request without key
+curl https://api.protekt.dev/secure-data
 ```
+</CodeGroup>
 
-### Invalid Redirect URI
+###  Fix
+Make sure your API key is included as a bearer token:
 
-**Error**: `invalid_request` with redirect URI mismatch
-
-**Cause**: The redirect URI in your request doesn't match the one configured in your application.
-
-**Solution**:
-1. Check your redirect URI configuration in the Protekt dashboard
-2. Ensure the URI matches exactly (including protocol, domain, and path)
-3. Update your application configuration
-
-```javascript
-// Make sure this matches your dashboard configuration
-const protekt = new Protekt({
-  domain: 'your-tenant.protekt.com',
-  clientId: 'your-client-id',
-  redirectUri: 'https://your-app.com/callback' // Must match exactly
-});
+<CodeGroup>
+```ts Correct Authorization Header
+curl https://api.protekt.dev/secure-data \
+  -H "Authorization: Bearer pk_live_abc123"
 ```
+</CodeGroup>
 
-### Expired Authorization Code
+<Tip>Store API keys in environment variables, never in frontend code.</Tip>
 
-**Error**: `invalid_grant`
+##  CORS Errors
 
-**Cause**: Authorization codes expire after 10 minutes and can only be used once.
+If you're calling the Protekt API from a browser and get a CORS error:
 
-**Solution**:
-1. Request a new authorization code by redirecting to login
-2. Ensure you're handling the callback immediately after receiving the code
-3. Don't store or reuse authorization codes
+<Warning>Browsers block requests to unknown origins for security.</Warning>
 
-```javascript
-// Handle callback immediately
-app.get('/callback', async (req, res) => {
-  const { code } = req.query;
-  
+###  Fix
+Use your backend to proxy the request or contact support to whitelist your domain.
+
+##  Invalid Redirect URI
+
+This happens during OAuth login when the callback URL doesn’t match any configured URI.
+
+<CodeGroup>
+```ts OAuth Error
+Error: redirect_uri_mismatch
+```
+</CodeGroup>
+
+###  Fix
+Verify that your redirect URI in the Protekt dashboard matches exactly with the one sent in the login request.
+
+## 
+ Invalid Client ID or Secret
+
+<CodeGroup>
+```ts Token Exchange Error
+Error: invalid_client
+```
+</CodeGroup>
+
+###  Fix
+Double-check your client credentials. You can reset them from the Protekt dashboard.
+
+<Info>You can find your Client ID and Secret in the “Project Settings” tab of your dashboard.</Info>
+
+##  Rate Limit Exceeded
+
+<CodeGroup>
+```ts 429 Too Many Requests
+Error: Rate limit exceeded. Try again in 60s.
+```
+</CodeGroup>
+
+###  Fix
+Implement exponential backoff and caching strategies to reduce unnecessary calls.
+
+<details>
+<summary>Show retry logic example (Node.js)</summary>
+
+```js
+async function fetchWithBackoff(url, retries = 3) {
   try {
-    // Exchange code for token immediately
-    const token = await protekt.handleCallback();
-    // Store token and redirect
-    res.redirect('/dashboard');
-  } catch (error) {
-    console.error('Callback error:', error);
-    res.redirect('/login');
+    const res = await fetch(url);
+    if (res.status === 429 && retries > 0) {
+      await new Promise(r => setTimeout(r, 1000));
+      return fetchWithBackoff(url, retries - 1);
+    }
+    return res.json();
+  } catch (err) {
+    console.error(err);
   }
-});
-```
-
-### Invalid Token
-
-**Error**: `invalid_token`
-
-**Cause**: The access token is invalid, expired, or malformed.
-
-**Solution**:
-1. Check if the token has expired
-2. Verify the token format and signature
-3. Request a new token using refresh token
-
-```javascript
-// Check token expiration
-const isTokenExpired = (token) => {
-  try {
-    const decoded = jwt.decode(token);
-    return decoded.exp * 1000 < Date.now();
-  } catch (error) {
-    return true;
-  }
-};
-
-// Refresh token if expired
-if (isTokenExpired(accessToken)) {
-  const newToken = await protekt.refreshToken(refreshToken);
-  // Update stored token
 }
 ```
+</details>
 
-## Network Errors
+##  JWT Expired or Invalid
 
-### CORS Issues
+If a protected route throws a 401 Unauthorized error:
 
-**Error**: `CORS policy: No 'Access-Control-Allow-Origin' header`
-
-**Cause**: Cross-origin requests are blocked by the browser.
-
-**Solution**:
-1. Configure CORS in your Protekt application settings
-2. Add your domain to the allowed origins list
-3. Use the correct domain in your configuration
-
-```javascript
-// In your Protekt dashboard, add these origins:
-// https://your-app.com
-// http://localhost:3000 (for development)
+<CodeGroup>
+```ts 401 Error
+Error: JWT expired or invalid
 ```
+</CodeGroup>
 
-### Network Timeout
+###  Fix
+Ensure you're storing and refreshing tokens properly. Use the refresh endpoint when access tokens expire.
 
-**Error**: `Network timeout` or `ECONNRESET`
+<Tip>Tokens typically expire in 15–30 minutes for security. Always implement refresh flows.</Tip>
 
-**Cause**: Network connectivity issues or server unavailability.
+---
 
-**Solution**:
-1. Check your internet connection
-2. Verify Protekt service status at [status.protekt.com](https://status.protekt.com)
-3. Implement retry logic with exponential backoff
+##  Next Up
 
-```javascript
-// Implement retry logic
-const retryWithBackoff = async (fn, maxRetries = 3) => {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (i === maxRetries - 1) throw error;
-      
-      // Wait with exponential backoff
-      await new Promise(resolve => 
-        setTimeout(resolve, Math.pow(2, i) * 1000)
-      );
-    }
-  }
-};
-
-// Use retry logic
-const token = await retryWithBackoff(() => protekt.handleCallback());
-```
-
-## Configuration Errors
-
-### Missing Environment Variables
-
-**Error**: `Configuration error` or `Missing required parameter`
-
-**Cause**: Required environment variables are not set.
-
-**Solution**:
-1. Check your `.env` file or environment variables
-2. Verify all required configuration values are present
-3. Use a configuration validation library
-
-```javascript
-// Validate configuration
-const validateConfig = () => {
-  const required = ['PROTEKT_DOMAIN', 'PROTEKT_CLIENT_ID', 'PROTEKT_REDIRECT_URI'];
-  
-  for (const key of required) {
-    if (!process.env[key]) {
-      throw new Error(`Missing required environment variable: ${key}`);
-    }
-  }
-};
-
-// Call validation on startup
-validateConfig();
-```
-
-### Incorrect Domain Configuration
-
-**Error**: `Invalid domain` or `Domain not found`
-
-**Cause**: The domain is incorrectly configured or doesn't exist.
-
-**Solution**:
-1. Verify your tenant domain in the Protekt dashboard
-2. Check for typos in the domain name
-3. Ensure you're using the correct environment
-
-```javascript
-// Correct domain format
-const protekt = new Protekt({
-  domain: 'your-tenant.protekt.com', // Not 'https://your-tenant.protekt.com'
-  clientId: 'your-client-id',
-  redirectUri: 'https://your-app.com/callback'
-});
-```
-
-## SDK-Specific Errors
-
-### React Native Issues
-
-**Error**: `URL polyfill required`
-
-**Solution**:
-```javascript
-// Add URL polyfill for React Native
-import 'react-native-url-polyfill/auto';
-
-import { Protekt } from '@protekt/react-native';
-```
-
-**Error**: `Deep linking not configured`
-
-**Solution**:
-```xml
-<!-- iOS: Add to Info.plist -->
-<key>CFBundleURLTypes</key>
-<array>
-  <dict>
-    <key>CFBundleURLName</key>
-    <string>protekt</string>
-    <key>CFBundleURLSchemes</key>
-    <array>
-      <string>your-app-scheme</string>
-    </array>
-  </dict>
-</array>
-```
-
-```xml
-<!-- Android: Add to AndroidManifest.xml -->
-<activity>
-  <intent-filter>
-    <action android:name="android.intent.action.VIEW" />
-    <category android:name="android.intent.category.DEFAULT" />
-    <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="your-app-scheme" />
-  </intent-filter>
-</activity>
-```
-
-### Flutter Issues
-
-**Error**: `PlatformException: No activity found`
-
-**Solution**:
-```dart
-// Add URL launcher dependency
-dependencies:
-  url_launcher: ^6.0.0
-
-// Configure URL schemes in iOS and Android
-```
-
-## Rate Limiting
-
-### Too Many Requests
-
-**Error**: `rate_limit_exceeded`
-
-**Cause**: You've exceeded the rate limit for your plan.
-
-**Solution**:
-1. Check your current usage in the Protekt dashboard
-2. Implement exponential backoff for retries
-3. Consider upgrading your plan if needed
-
-```javascript
-// Handle rate limiting
-const handleRateLimit = async (fn) => {
-  try {
-    return await fn();
-  } catch (error) {
-    if (error.code === 'rate_limit_exceeded') {
-      // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      return await fn();
-    }
-    throw error;
-  }
-};
-```
-
-## Debugging Tips
-
-### Enable Debug Logging
-
-```javascript
-// Enable debug mode
-const protekt = new Protekt({
-  domain: 'your-tenant.protekt.com',
-  clientId: 'your-client-id',
-  redirectUri: 'https://your-app.com/callback',
-  debug: true // Enable debug logging
-});
-```
-
-### Check Network Requests
-
-Use browser developer tools to inspect network requests:
-
-1. Open Developer Tools (F12)
-2. Go to Network tab
-3. Attempt authentication
-4. Look for failed requests and error responses
-
-### Verify Token Contents
-
-```javascript
-// Decode JWT to inspect contents (for debugging only)
-const decodeToken = (token) => {
-  try {
-    return JSON.parse(atob(token.split('.')[1]));
-  } catch (error) {
-    return null;
-  }
-};
-
-const tokenData = decodeToken(accessToken);
-console.log('Token data:', tokenData);
-```
-
-## Getting Help
-
-If you're still experiencing issues:
-
-1. **Check Documentation**: Review the relevant guides in this documentation
-2. **Search Issues**: Look for similar issues in our [GitHub repository](https://github.com/protekt)
-3. **Contact Support**: Email [support@protekt.com](mailto:support@protekt.com)
-4. **Check Status**: Visit [status.protekt.com](https://status.protekt.com) for service updates
-
-## Error Reference
-
-| Error Code | Description | Solution |
-|------------|-------------|----------|
-| `invalid_client` | Invalid client ID | Verify client ID in dashboard |
-| `invalid_request` | Missing or invalid parameters | Check request parameters |
-| `invalid_grant` | Expired or invalid authorization code | Request new authorization code |
-| `invalid_token` | Invalid or expired access token | Refresh token or re-authenticate |
-| `unauthorized_client` | Client not authorized | Check application configuration |
-| `access_denied` | User denied the request | User must approve the request |
-| `server_error` | Internal server error | Retry with exponential backoff |
-| `temporarily_unavailable` | Service temporarily unavailable | Check service status and retry |
-
-## Next Steps
-
-- [Status Page](/troubleshooting/status-embed) - Check service status
-- [Error Pages](/troubleshooting/error-pages) - Custom error page templates
-- [API Reference](/reference/redocusaurus) - Complete API documentation 
+<CardGroup cols={2}>
+<Card
+  title="Security Best Practices"
+  icon="shield"
+  href="/security/best-practices"
+>
+  10-step checklist to lock down your auth
+</Card>
+<Card
+  title="Compliance & Certifications"
+  icon="check-circle"
+  href="/security/compliance"
+>
+  SOC 2, GDPR, and audit reports
+</Card>
+<Card
+  title="Threat Model"
+  icon="diagram-project"
+  href="/security/threat-model"
+>
+  How Protekt defends against attacks
+</Card>
+<Card
+  title="Security FAQs"
+  icon="question-circle"
+  href="/security/faqs"
+>
+  Common security questions answered
+</Card>
+</CardGroup>

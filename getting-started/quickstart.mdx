@@ -1,331 +1,176 @@
 ---
 title: "Quickstart"
-description: "Get authentication working in your app right now"
+description: "Set up authentication in minutes"
 ---
 
-# 5-Minute Quickstart
+<Frame>
+<img src="/images/protekt-quickstart.png" alt="Protekt dashboard showing Client ID and Client Secret in the project settings" className="rounded-lg shadow-lg" />
+</Frame>
 
-You're about to add secure login to your app in under 5 minutes. Let's get started.
+This Quickstart shows you how to integrate **Protekt** into your app using the SDK. By the end, you’ll have a working login button and user session.
 
-## Prerequisites
+<Info>
+  **Prerequisites**: Before you begin, sign up at [dashboard.protekt.com](https://dashboard.protekt.com) and ensure Node.js 16+ is installed.
+</Info>
 
-- Node.js 18+ installed
-- A code editor
-- 5 minutes of your time
+## Step 1: Create your application in protekt
 
-## Step 1: Create Your Protekt Project
+Log into your [Protekt Dashboard](https://dashboard.protekt.com) and create a new application:
 
-Sign up at [protekt.dev](https://protekt.dev) and create a new project.
+1. Click **Create Application**
+2. Name it (e.g., "My App")
+3. Set your callback URL: `http://localhost:3000/callback`
+4. Copy your **Client ID** and **Client Secret**
 
-Copy your **Client ID** and **Client Secret** from the dashboard.
+The callback URL is where Protekt redirects users after they authenticate. During development, this points to your local machine. In production, you'll change this to your live domain.
 
-<img src="/images/protekt-dashboard.png" alt="Protekt dashboard showing Client ID and Client Secret in the project settings" className="rounded-lg shadow-md my-4" />
+## Step 2: Install this protekt sdk
 
-## Step 2: Choose Your Stack
+To intall the proteck SDK, run the command:
 
-<Tabs>
-<Tab title="React + Express">
-
-**Frontend:** React with hooks
-**Backend:** Express.js API
-
-Perfect for modern web apps.
-
-</Tab>
-<Tab title="Next.js">
-
-**Full-stack:** Next.js with API routes
-
-Great for rapid prototyping.
-
-</Tab>
-<Tab title="Vue + FastAPI">
-
-**Frontend:** Vue 3 with composition API
-**Backend:** Python FastAPI
-
-Ideal for Python developers.
-
-</Tab>
-</Tabs>
-
-## Step 3: Install SDKs
-
-<Tabs>
-<Tab title="React + Express">
-
-```bash  terminal
-# Frontend
-npm install @protekt/react
-
-# Backend  
+```bash
 npm install @protekt/node
 ```
 
-</Tab>
-<Tab title="Next.js">
+The SDK handles all the OAuth protocol details, generating authorization URLs, exchanging codes for tokens, and validating responses. You could make raw HTTP requests to Protekt's API instead, but the SDK saves you from dealing with the complexity.
 
-```bash  terminal
-npm install @protekt/nextjs
-```
+## Step 3: Configure protekt
 
-</Tab>
-<Tab title="Vue + FastAPI">
+Create a `protekt.js` file in your project:
 
-```bash  terminal
-# Frontend
-npm install @protekt/vue
+```javascript protekt.js
+const { Protekt } = require('@protekt/node');
 
-# Backend
-pip install protekt-python
-```
-
-</Tab>
-</Tabs>
-
-## Step 4: Configure Environment
-
-Create a `.env` file in your project root:
-
-```bash  .env
-PROTEKT_CLIENT_ID=your_client_id_here
-PROTEKT_CLIENT_SECRET=your_client_secret_here
-PROTEKT_REDIRECT_URI=http://localhost:3000/callback
-```
-
-<Info>Never commit secrets to version control. Keep them in environment variables.</Info>
-
-## Step 5: Add Authentication
-
-<Tabs>
-<Tab title="React + Express">
-
-**Frontend Setup**
-```jsx  App.jsx
-import { ProtektProvider, useProtekt } from '@protekt/react';
-
-function LoginButton() {
-  const { user, login, logout, isLoading } = useProtekt();
-  
-  if (isLoading) return <div>Loading...</div>;
-  if (!user) return <button onClick={login}>Sign In</button>;
-  
-  return (
-    <div>
-      <h1>Welcome, {user.name}!</h1>
-      <button onClick={logout}>Sign Out</button>
-    </div>
-  );
-}
-
-export default function App() {
-  return (
-    <ProtektProvider clientId={process.env.REACT_APP_PROTEKT_CLIENT_ID}>
-      <LoginButton />
-    </ProtektProvider>
-  );
-}
-```
-
-**Backend Setup**
-```javascript  server.js
-import express from 'express';
-import { Protekt } from '@protekt/node';
-
-const app = express();
 const protekt = new Protekt({
   clientId: process.env.PROTEKT_CLIENT_ID,
-  clientSecret: process.env.PROTEKT_CLIENT_SECRET
+  clientSecret: process.env.PROTEKT_CLIENT_SECRET,
+  redirectUri: 'http://localhost:3000/callback'
 });
 
-// Handle auth callback
+module.exports = protekt;
+```
+<Tip>
+Store your credentials in environment variables, not directly in code. Create a `.env` file:
+</Tip>
+
+```bash .env
+PROTEKT_CLIENT_ID=your_client_id_here
+PROTEKT_CLIENT_SECRET=your_client_secret_here
+```
+<Tip>
+Add `.env` to your `.gitignore` so credentials never get committed to version control.
+</Tip>
+
+## Step 4: Add login route
+
+Create a route that redirects users to Protekt's login page:
+
+```javascript server.js
+const express = require('express');
+const protekt = require('./protekt');
+
+const app = express();
+
+app.get('/login', (req, res) => {
+  const loginUrl = protekt.getLoginUrl();
+  res.redirect(loginUrl);
+});
+
+app.listen(3000, () => {
+  console.log('Server running on http://localhost:3000');
+});
+```
+
+When users visit `/login`, they're sent to Protekt's hosted authentication page. This page is fully managed, you don't need to build or maintain any login UI. Users can sign up, log in, reset passwords, or use social logins, all on Protekt's domain.
+
+
+## Step 5: Handle the callback
+
+After users authenticate, Protekt redirects them back to your callback URL with an authorization code. Exchange this code for access tokens:
+
+```javascript server.js
 app.get('/callback', async (req, res) => {
-  const { user } = await protekt.handleCallback(req.query.code);
-  req.session.user = user;
-  res.redirect('/dashboard');
-});
-
-// Protect routes
-app.get('/api/profile', protekt.requireAuth, (req, res) => {
-  res.json({ user: req.user });
-});
-
-app.listen(3001);
-```
-
-</Tab>
-<Tab title="Next.js">
-
-**Setup Provider**
-```jsx  pages/_app.js
-import { ProtektProvider } from '@protekt/nextjs';
-
-export default function App({ Component, pageProps }) {
-  return (
-    <ProtektProvider clientId={process.env.NEXT_PUBLIC_PROTEKT_CLIENT_ID}>
-      <Component {...pageProps} />
-    </ProtektProvider>
-  );
-}
-```
-
-**Add Login**
-```jsx  pages/index.js
-import { useProtekt } from '@protekt/nextjs';
-
-export default function Home() {
-  const { user, login, logout, isLoading } = useProtekt();
+  const { code } = req.query;
   
-  if (isLoading) return <div>Loading...</div>;
-  if (!user) return <button onClick={login}>Sign In</button>;
-  
-  return (
-    <div>
-      <h1>Welcome, {user.name}!</h1>
-      <button onClick={logout}>Sign Out</button>
-    </div>
-  );
+  try {
+    const { user, tokens } = await protekt.handleCallback(code);
+    
+    // Store user in session
+    req.session.user = user;
+    req.session.accessToken = tokens.accessToken;
+    
+    res.redirect('/dashboard');
+  } catch (error) {
+    console.error('Authentication failed:', error);
+    res.redirect('/login?error=auth_failed');
+  }
+});
+```
+
+The authorization code in the URL is single-use and short-lived (valid for 60 seconds). You exchange it for tokens that your application uses to authenticate subsequent requests. This two-step process the code first, then tokens is part of the OAuth 2.0 Authorization Code flow, designed to keep tokens secure even if URLs get logged or shared.
+
+## Step 6: Protect routes
+
+Add middleware to verify users are authenticated before accessing protected routes:
+
+```javascript server.js
+function requireAuth(req, res, next) {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+  next();
 }
-```
 
-**API Route**
-```javascript  pages/api/profile.js
-import { protekt } from '@protekt/nextjs';
-
-export default protekt.withAuth(async (req, res) => {
-  res.json({ user: req.user });
+app.get('/dashboard', requireAuth, (req, res) => {
+  res.send(`Welcome, ${req.session.user.email}!`);
 });
 ```
 
-</Tab>
-<Tab title="Vue + FastAPI">
+This middleware checks if a user exists in the session. If not, it redirects to login. If yes, it allows the request to proceed. You can apply this middleware to any route that should require authentication.
 
-**Frontend Setup**
-```vue  App.vue
-<template>
-  <div>
-    <div v-if="isLoading">Loading...</div>
-    <button v-else-if="!user" @click="login">Sign In</button>
-    <div v-else>
-      <h1>Welcome, {{ user.name }}!</h1>
-      <button @click="logout">Sign Out</button>
-    </div>
-  </div>
-</template>
+## Step 7: Add session management
 
-<script setup>
-import { useProtekt } from '@protekt/vue';
+Install and configure express-session to persist user sessions:
 
-const { user, login, logout, isLoading } = useProtekt({
-  clientId: import.meta.env.VITE_PROTEKT_CLIENT_ID
-});
-</script>
+```bash
+npm install express-session
 ```
 
-**Backend Setup**
-```python  main.py
-from fastapi import FastAPI, Depends
-from protekt import Protekt, get_current_user
+```javascript server.js
+const session = require('express-session');
 
-app = FastAPI()
-protekt = Protekt(
-    client_id="your_client_id",
-    client_secret="your_client_secret"
-)
-
-@app.get("/callback")
-async def callback(code: str):
-    user = await protekt.handle_callback(code)
-    return {"user": user}
-
-@app.get("/api/profile")
-async def profile(user = Depends(get_current_user)):
-    return {"user": user}
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
 ```
 
-</Tab>
-</Tabs>
+Sessions store user information server-side and give the browser a session ID cookie. The `httpOnly` flag prevents JavaScript from accessing the cookie, protecting against XSS attacks. The `secure` flag ensures cookies only transmit over HTTPS in production.
 
-## Step 6: Run and Test
+## Step 8: Test the flow
 
-<Tabs>
-<Tab title="React + Express">
+Start your server and test the authentication flow:
 
-```bash  terminal
-# Start backend
-npm run server
-
-# Start frontend  
-npm start
+```bash
+node server.js
 ```
 
-</Tab>
-<Tab title="Next.js">
+1. Navigate to `http://localhost:3000/login`
+2. You'll be redirected to Protekt's login page
+3. Create an account or log in
+4. You'll be redirected back to `/callback`, then to `/dashboard`
+5. You should see "Welcome, [your-email]!"
 
-```bash  terminal
-npm run dev
-```
 
-</Tab>
-<Tab title="Vue + FastAPI">
 
-```bash  terminal
-# Start backend
-uvicorn main:app --reload
+## Next steps
+Congratulations! You have successfully set up authentication using protekt. Here are suggested next steps to enhance your integration flow:
 
-# Start frontend
-npm run dev
-```
-
-</Tab>
-</Tabs>
-
-Visit `http://localhost:3000` and click **Sign In**.
-
-You'll see Protekt's login screen. Create an account or sign in with Google.
-
-After login, you'll be redirected back to your app with user data loaded.
-
-## Step 7: Test Authentication
-
-Try these features in your running app:
-
- **Sign up** with email and password
- **Sign in** with existing account  
- **Sign in with Google** (OAuth)
- **View user profile** data
- **Sign out** and clear session
-
-## What You Just Built
-
- **Congratulations!** You now have:
-
-- Secure user authentication
-- Social login with Google
-- Protected API routes
-- Session management
-- User profile access
-
-## Next Steps
-
-Your auth is working! Now explore advanced features:
-
-<CardGroup cols={3}>
-<Card title="Add MFA" icon="shield" href="/how-to-guides/enable-mfa">
-Enable two-factor authentication
-</Card>
-<Card title="Organizations" icon="users" href="/tutorials/b2b-organizations">
-Add team management
-</Card>
-<Card title="Complete Tutorial" icon="book" href="/tutorials/first-integration">
-Build a full auth system
-</Card>
-</CardGroup>
-
-**Popular next steps:**
-- [Send Magic Links](../how-to-guides/send-magic-link) - Passwordless login
-- [Set Up RBAC](../how-to-guides/setup-rbac) - Role-based permissions  
-- [Mobile Integration](../tutorials/mobile-app) - iOS and Android SDKs
-- [Enterprise SSO](../how-to-guides/implement-sso) - Connect Okta, Azure AD
-
-<Info>**Need help?** Check our [troubleshooting guide](../troubleshooting/common-errors) or [join our Discord](https://discord.gg/protekt).</Info>
+<Card title="First Integration Tutorial" icon="code" href="/tutorials/first-integration" horizontal> Full backend example with sessions, tokens, and logout. </Card>
+<Card title="Enable MFA" icon="shield" href="/guides/enable-mfa" horizontal> Add Multi-Factor Authentication to secure user accounts. </Card> <Card title="Setup RBAC" icon="lock" href="/guides/setup-rbac" horizontal> Manage permissions with Role-Based Access Control. </Card> 

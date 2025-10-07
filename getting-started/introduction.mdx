@@ -1,0 +1,78 @@
+---
+title: "Introduction"
+description: "Get secure authentication APIs and SDKs to integrate login, MFA, SSO and RBAC into your app in minutes."
+---
+
+<Frame>
+<img src="/images/protekt intro.png" alt="Protekt welcome cover image" className="rounded-lg shadow-lg" />
+</Frame>
+
+# Welcome to protekt
+
+Protekt is an authentication platform that gives you secure login, multi-factor authentication (MFA), single sign-on (SSO), and role-based access control (RBAC) as part of a single system. 
+## Core features
+
+1. User registration and login: Email/password, social, and passwordless authentication
+2. Multi-factor authentication (MFA): SMS, authenticator apps, and biometric verification
+3. Enterprise SSO: SAML and OIDC protocols for seamless integration
+4. Session management: Secure token handling and automatic refresh
+5. Organization and team management: Multi-tenant support with hierarchy
+6. Role-based permissions: Fine-grained access control for your application
+
+
+## How it works
+
+Your application redirects users to Protekt's hosted pages, Protekt handles authentication, then returns secure tokens to your callback URL.
+
+**Example Workflow:**
+
+```javascript server.js
+// 1. Redirect to Protekt
+const loginUrl = protekt.getLoginUrl({
+  redirectUri: 'https://yourapp.com/callback'
+});
+
+// 2. Handle callback
+const { user, tokens } = await protekt.handleCallback(code);
+
+// 3. Validate requests
+app.use('/api', protekt.validateJWT);
+```
+
+This OAuth 2.0 flow ensures your application never handles sensitive credentials directly. Protekt manages password storage, MFA challenges, and session security while you focus on your product logic.
+
+
+## What's next
+
+Below are some recommended next steps, but if this is your first time with Protekt, start with [Quickstart](getting-started/quickstart).
+
+<CardGroup cols={2}>
+  <Card
+    title="Quickstart"
+    icon="rocket"
+    href="getting-started/quickstart"
+  >
+    Get authentication working in your app in under 5 minutes
+  </Card>
+  <Card
+    title="Tutorials"
+    icon="book-open"
+    href="/tutorials/first-integration"
+  >
+    Step-by-step tutorial to build complete authentication
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/reference/api-overview"
+  >
+    Complete REST API documentation and endpoint reference
+  </Card>
+  <Card
+    title="SDK Libraries"
+    icon="box"
+    href="/sdks/javascript"
+  >
+    Official SDKs for JavaScript, Python, Go, and mobile platforms
+  </Card>
+</CardGroup>

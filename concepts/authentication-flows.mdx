@@ -1,0 +1,259 @@
+---
+title: "Authentication Flows"
+description: "Understanding how different authentication patterns work and when to use each"
+---
+
+When you click Login in an application, a series of steps quietly takes place behind the scenes. This series is called an authentication flow.
+
+Nearly everyone has used one, and nearly everyone assumes they all work the same way. But they don’t. Passwordless login, enterprise SSO, mobile apps, and API services each demand a different kind of flow.
+
+And that difference matters. Using the wrong approach makes authentication harder to maintain and less secure. Using the right flow makes it easier for both developers and users.
+
+## Why authentication flows matter
+
+Think about logging into different applications. Sometimes you type a username and password. Sometimes you click Sign in with Google and get redirected. Sometimes you just open a link sent by email.
+
+Each of these is a different authentication flow. And each flow defines what information users provide, where the authentication happens, how tokens are delivered, and what security guarantees you get.
+
+## Authorization code flow (standard login)
+
+This is the most common flow for web applications. When you see "Sign in with Google" or similar buttons, this is what happens underneath.
+
+**How it works:**
+1. User clicks login, App redirects to Protekt
+2. User authenticates on Protekt's hosted page
+3. Protekt redirects back with authorization code
+4. Your server exchanges code for access tokens
+5. Tokens stored, user authenticated
+
+**Why the two-step process?** The authorization code is single-use and short-lived (60 seconds). Even if intercepted, it can't be used without your client secret. Actual tokens never pass through the browser's address bar.
+
+**When to use it:**
+- Web applications with backend servers
+- Applications making API calls on behalf of users
+- Any scenario where you can keep a client secret secure
+
+```javascript
+app.get('/login', (req, res) => {
+  const authUrl = protekt.getLoginUrl({
+    redirectUri: 'https://yourapp.com/callback'
+  });
+  res.redirect(authUrl);
+});
+
+app.get('/callback', async (req, res) => {
+  const tokens = await protekt.exchangeCodeForTokens(req.query.code);
+  req.session.accessToken = tokens.accessToken;
+  res.redirect('/dashboard');
+});
+```
+
+## Authorization code with pkce (mobile & spa)
+
+PKCE (Proof Key for Code Exchange) is for applications that can't securely store secrets mobile apps and single-page applications.
+
+**How it works:**
+1. App generates random code verifier
+2. Creates hash (code challenge) of verifier
+3. Redirects to Protekt with challenge
+4. User authenticates
+5. App exchanges code + original verifier for tokens
+6. Protekt validates verifier matches challenge
+
+An attacker intercepting the code can't use it without the original verifier, which only exists in your app's memory.
+
+**When to use it:**
+- Mobile applications (iOS, Android, React Native, Flutter)
+- Single-page applications (React, Vue, Angular)
+- Any public client application
+
+```javascript
+const codeVerifier = generateRandomString(128);
+const codeChallenge = await sha256(codeVerifier);
+
+sessionStorage.setItem('code_verifier', codeVerifier);
+
+const authUrl = protekt.getAuthUrl({
+  codeChallenge: codeChallenge,
+  codeChallengeMethod: 'S256'
+});
+```
+
+## Client credentials flow (service-to-service)
+
+For machine-to-machine communication without human users. Background jobs, microservices, CLI tools.
+
+**How it works:**
+1. Application sends client ID and secret
+2. Receives access token
+3. Uses token for API calls
+
+No redirects, no users, just direct credential exchange.
+
+**When to use it:**
+- Server-to-server communication
+- Background jobs and cron tasks
+- Microservices calling APIs
+- CLI tools and scripts
+
+```javascript
+const token = await protekt.getClientCredentialsToken({
+  clientId: process.env.CLIENT_ID,
+  clientSecret: process.env.CLIENT_SECRET,
+  scope: 'api:read api:write'
+});
+```
+
+## Magic link flow (passwordless)
+
+Email-based authentication. User receives email with login link, clicks it, and they're authenticated.
+
+**How it works:**
+1. User enters email
+2. Protekt sends magic link email
+3. User clicks link with one-time token
+4. App exchanges token for access
+5. User authenticated
+
+Think of it as a temporary password automatically generated and sent for each login.
+
+**When to use it:**
+- Consumer applications prioritizing convenience
+- Apps targeting less technical users
+- Reducing friction in signup flows
+
+```javascript
+await protekt.sendMagicLink({
+  email: req.body.email,
+  redirectTo: 'https://yourapp.com/dashboard'
+});
+```
+
+## Saml flow (enterprise sso)
+
+SAML is how enterprises do single sign-on. When employees click "Sign in with Okta" or "Sign in with Azure AD," SAML handles it.
+
+**How it works:**
+1. User clicks SSO → Redirects to identity provider
+2. User authenticates with company credentials
+3. IdP sends signed SAML assertion (XML document)
+4. App validates signature and extracts user info
+5. User authenticated
+
+SAML is complex—signed XML with multiple redirects. Protekt handles this complexity for you.
+
+**When to use it:**
+- B2B applications selling to enterprises
+- Customers require SSO for compliance
+- Integration with Okta, Azure AD, Google Workspace
+
+```javascript
+const ssoUrl = await protekt.getSSOUrl({
+  organizationId: org.id,
+  redirectUri: 'https://yourapp.com/sso/callback'
+});
+res.redirect(ssoUrl);
+```
+
+## Refresh token flow
+
+Access tokens expire quickly (15-60 minutes). Refresh tokens get new access tokens without re-authentication.
+
+**How it works:**
+1. Access token expires
+2. App sends refresh token to Protekt
+3. Receives new access token
+4. Continues making API calls
+
+Refresh tokens are long-lived (days or weeks) and stored securely. They can be revoked immediately.
+
+**When to use it:**
+- Any application with short-lived access tokens
+- Mobile apps (avoid frequent re-login)
+- Background processes needing long-term access
+
+```javascript
+try {
+  await apiCall(url, accessToken);
+} catch (error) {
+  if (error.status === 401) {
+    const newToken = await protekt.refreshToken(refreshToken);
+    await apiCall(url, newToken);
+  }
+}
+```
+
+## Device code flow
+
+For devices with limited input—smart TVs, IoT devices, CLI tools on remote servers.
+
+**How it works:**
+1. Device requests device code
+2. Shows URL and code to user
+3. User visits URL on phone/computer
+4. Enters code and authenticates
+5. Device polls for completion
+6. Receives tokens when user approves
+
+Think of pairing a Chromecast—you enter a code on your phone to authenticate the TV.
+
+**When to use it:**
+- Smart TV apps
+- IoT devices
+- CLI tools on servers without browsers
+- Devices with limited input capabilities
+
+```javascript
+const { deviceCode, userCode, verificationUri } = await protekt.requestDeviceCode();
+
+console.log(`Visit ${verificationUri} and enter code: ${userCode}`);
+
+const tokens = await protekt.pollForTokens(deviceCode);
+```
+
+
+## Security considerations
+
+All flows share common security principles:
+
+**Use HTTPS everywhere** - Authentication over HTTP is never secure
+
+**Short-lived access tokens** - 15-60 minutes maximum
+
+**Long-lived refresh tokens** - Days/weeks, can be revoked
+
+**State parameter** - Prevents CSRF attacks on OAuth flows
+
+**Token storage** - Never localStorage for sensitive tokens, use httpOnly cookies or secure storage
+
+## Common mistakes
+
+**Storing tokens in localStorage** - XSS attacks can steal them. Use httpOnly cookies or secure storage.
+
+**No state parameter** - Opens CSRF vulnerabilities. Always include state.
+
+**Long-lived access tokens** - Can't revoke them. Use refresh tokens instead.
+
+**Client secrets in frontend** - Anyone can extract them. Use PKCE for public clients.
+
+**Skipping SSL verification** - Man-in-the-middle attacks possible. Always verify certificates.
+
+## Next steps
+
+<CardGroup cols={2}>
+<Card title="JWT vs Sessions" icon="brain" href="./jwt-vs-sessions" horizontal>
+Choose the right authentication storage strategy for your app.
+</Card>
+
+<Card title="Security Model" icon="shield" href="./security-model" horizontal>
+Understand how Protekt secures users, tokens, and sessions.
+</Card>
+
+<Card title="First Integration" icon="code" href="../tutorials/first-integration" horizontal>
+Step-by-step guide for implementing the Authorization Code Flow.
+</Card>
+
+<Card title="Mobile Integration" icon="phone" href="../tutorials/mobile-app-integration" horizontal>
+Implement PKCE flow for native and mobile apps.
+</Card>
+</CardGroup>
