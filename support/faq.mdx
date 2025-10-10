@@ -7,37 +7,34 @@ description: "Frequently asked questions about using Protekt, permissions, and a
 Find quick answers to common questions about Protekt. Can't find what you're looking for? [Contact support](https://protekt.dev/support) or join our [Discord community](https://discord.gg/protekt).
 </Info>
 
----
-
 ## General
 
 Learn about Protekt's core features, hosting, pricing, and supported frameworks.
 
 <AccordionGroup>
 
-<Accordion title="What is Protekt?" icon="circle-question" defaultOpen>
+<Accordion title="What is Protekt?" defaultOpen>
 Protekt is a lightweight permission management system you can integrate into your app to control user access to features and data.
 </Accordion>
 
-<Accordion title="Do I need to host anything?" icon="server">
+<Accordion title="Do I need to host anything?">
 No. Protekt is fully managed — you only install the SDK and use the APIs. We handle infrastructure, scaling, and maintenance.
 </Accordion>
 
-<Accordion title="Is there a free plan?" icon="hand-holding-dollar">
+<Accordion title="Is there a free plan?">
 Yes. We offer a generous free tier for testing and small apps. See our [pricing page](https://protekt.dev/pricing) for details.
 </Accordion>
 
-<Accordion title="What frameworks does Protekt support?" icon="code">
+<Accordion title="What frameworks does Protekt support?">
 Protekt works with any frontend (React, Vue, Next.js, Angular) and backend (Node.js, Python, Go, PHP) via API or SDK. See [all integrations](/integrations).
 </Accordion>
 
-<Accordion title="How do I install Protekt?" icon="download">
+<Accordion title="How do I install Protekt?">
 Follow the [Quickstart Guide](/getting-started/quickstart) for your preferred language or framework. Most integrations take less than 5 minutes.
 </Accordion>
 
 </AccordionGroup>
 
----
 
 ## Authentication and tokens
 
@@ -45,29 +42,28 @@ Understanding JWT tokens, expiration, refresh logic, and token management.
 
 <AccordionGroup>
 
-<Accordion title="What kind of tokens does Protekt use?" icon="key">
+<Accordion title="What kind of tokens does Protekt use?">
 Access tokens are JWTs (JSON Web Tokens), issued when your app authenticates via the SDK or API. Refresh tokens are also provided for long-lived sessions.
 </Accordion>
 
-<Accordion title="How long do tokens last?" icon="clock">
+<Accordion title="How long do tokens last?">
 Access tokens expire after **2 hours** by default. Refresh tokens are valid for **30 days** and can be used to obtain new access tokens.
 </Accordion>
 
-<Accordion title="What happens if the token expires?" icon="triangle-exclamation">
+<Accordion title="What happens if the token expires?">
 Your API request will fail with a `401 Unauthorized` error. Implement automatic token refresh logic or redirect the user to log in again. See [Token Refresh Guide](/guides/token-refresh).
 </Accordion>
 
-<Accordion title="Can I customize token expiration time?" icon="gear">
+<Accordion title="Can I customize token expiration time?">
 Yes. Token TTLs can be configured in your project settings in the dashboard under **Security → Token Settings**.
 </Accordion>
 
-<Accordion title="Can I revoke a token?" icon="ban">
+<Accordion title="Can I revoke a token?">
 Yes. You can revoke user sessions via the dashboard or using the `/oauth/revoke` API endpoint to invalidate tokens immediately.
 </Accordion>
 
 </AccordionGroup>
 
----
 
 ## Permissions and roles
 
@@ -75,15 +71,15 @@ Questions about creating custom roles, assigning permissions, and checking user 
 
 <AccordionGroup>
 
-<Accordion title="Can I define custom roles?" icon="user-gear">
+<Accordion title="Can I define custom roles?">
 Yes. Use the dashboard or API to create custom roles with granular permissions. See [Custom Roles Guide](/guides/custom-roles).
 </Accordion>
 
-<Accordion title="How many roles can I assign to a user?" icon="users">
+<Accordion title="How many roles can I assign to a user?">
 A user can have **one active role** at a time. You can switch roles dynamically if needed using the SDK or API.
 </Accordion>
 
-<Accordion title="How do I check if a user has permission?" icon="shield-check">
+<Accordion title="How do I check if a user has permission?">
 Use `hasPermission("permission.name")` from the SDK or the `/check` endpoint from the API:
 
 ```javascript
@@ -91,13 +87,12 @@ const canEdit = await protekt.hasPermission('posts.edit');
 ```
 </Accordion>
 
-<Accordion title="Can I nest permissions or create hierarchies?" icon="sitemap">
+<Accordion title="Can I nest permissions or create hierarchies?">
 Not yet, but you can simulate nested roles by creating grouped permissions (e.g., `admin.*`, `posts.*`). Full hierarchy support is on our roadmap.
 </Accordion>
 
 </AccordionGroup>
 
----
 
 ## Testing and debugging
 
@@ -105,7 +100,7 @@ Tips for testing roles locally, inspecting requests, and handling inconsistent r
 
 <AccordionGroup>
 
-<Accordion title="How do I test user roles locally?" icon="flask">
+<Accordion title="How do I test user roles locally?">
 Use the dashboard to assign roles to your dev account or use mock roles via the SDK's test mode:
 
 ```javascript
@@ -116,7 +111,7 @@ const protekt = new Protekt({
 ```
 </Accordion>
 
-<Accordion title="How can I inspect network requests?" icon="network-wired">
+<Accordion title="How can I inspect network requests?">
 Use browser DevTools (Network tab) or Postman to confirm requests include:
 - Valid `Authorization: Bearer <token>` header
 - Correct project ID in request
@@ -125,7 +120,7 @@ Use browser DevTools (Network tab) or Postman to confirm requests include:
 See [Debugging Guide](/troubleshooting/debugging-guide) for details.
 </Accordion>
 
-<Accordion title="Why do I get inconsistent results with the same user?" icon="rotate">
+<Accordion title="Why do I get inconsistent results with the same user?">
 Ensure you:
 - Clear cached roles/permissions
 - Remove stale tokens from storage
@@ -143,7 +138,7 @@ Common errors like 403 Forbidden, 401 Unauthorized, CORS issues, and permission 
 
 <AccordionGroup>
 
-<Accordion title="Why am I getting a 403 Forbidden error?" icon="circle-xmark">
+<Accordion title="Why am I getting a 403 Forbidden error?">
 You're missing a required permission. Check:
 1. User's assigned role in dashboard
 2. Permission matrix for that role
@@ -152,7 +147,7 @@ You're missing a required permission. Check:
 See [403 Error Guide](/troubleshooting/403-errors).
 </Accordion>
 
-<Accordion title="My token is correct, but I still get a 401" icon="lock">
+<Accordion title="My token is correct, but I still get a 401">
 Verify that:
 - Token hasn't expired (check `exp` claim)
 - Token is sent in `Authorization: Bearer <token>` header
@@ -162,7 +157,7 @@ Verify that:
 Use [jwt.io](https://jwt.io) to decode and inspect your token.
 </Accordion>
 
-<Accordion title="Why does CORS block my request?" icon="browser">
+<Accordion title="Why does CORS block my request?">
 Ensure your frontend's domain is listed under **Settings → Allowed Origins** in the dashboard. Add:
 - `http://localhost:3000` (development)
 - `https://yourapp.com` (production)
@@ -172,7 +167,7 @@ Never call Protekt API directly from browser in production. Use your backend as 
 </Warning>
 </Accordion>
 
-<Accordion title="I changed roles, but permissions didn't update" icon="refresh">
+<Accordion title="I changed roles, but permissions didn't update">
 Permissions are cached for performance. To see changes immediately:
 1. Log out and back in
 2. Clear browser/app cache
@@ -190,19 +185,19 @@ Information about available SDKs, REST API usage, server-side integration, and m
 
 <AccordionGroup>
 
-<Accordion title="Is there a JS/TypeScript SDK?" icon="js">
+<Accordion title="Is there a JS/TypeScript SDK?">
 Yes. Install with `npm install @protekt/javascript`. Full documentation available in [JavaScript SDK Guide](/sdks/javascript).
 </Accordion>
 
-<Accordion title="Can I use Protekt with REST API only?" icon="code">
+<Accordion title="Can I use Protekt with REST API only?">
 Absolutely. The REST API provides full access without using the SDK. See [API Reference](/api-reference) for all endpoints.
 </Accordion>
 
-<Accordion title="Does Protekt support server-side usage?" icon="server">
+<Accordion title="Does Protekt support server-side usage?">
 Yes. You can authorize requests server-side to protect APIs. We recommend server-side validation for production apps. See [Server-Side Guide](/guides/server-side).
 </Accordion>
 
-<Accordion title="Can I use Protekt in mobile apps?" icon="mobile">
+<Accordion title="Can I use Protekt in mobile apps?">
 Yes. Protekt works with React Native, Flutter, and native iOS/Android apps. See [Mobile Integration Guide](/guides/mobile).
 </Accordion>
 
@@ -216,7 +211,7 @@ GDPR compliance, data storage locations, encryption standards, and audit logging
 
 <AccordionGroup>
 
-<Accordion title="Is Protekt GDPR compliant?" icon="scale-balanced">
+<Accordion title="Is Protekt GDPR compliant?">
 Yes. We meet GDPR standards with:
 - Data encryption at rest and in transit
 - Full audit logging
@@ -226,7 +221,7 @@ Yes. We meet GDPR standards with:
 See [Security Overview](/security/overview).
 </Accordion>
 
-<Accordion title="Where is user data stored?" icon="database">
+<Accordion title="Where is user data stored?">
 All data is stored in secure, encrypted data centers:
 - **EU**: Frankfurt, Germany
 - **US**: Virginia, USA
@@ -234,7 +229,7 @@ All data is stored in secure, encrypted data centers:
 You can choose your region in project settings.
 </Accordion>
 
-<Accordion title="Can I audit user access?" icon="clipboard-list">
+<Accordion title="Can I audit user access?">
 Yes. Use audit logs in the dashboard to track:
 - All permission checks
 - Role changes
@@ -254,7 +249,7 @@ Managing team members, project environments, and access control for collaborator
 
 <AccordionGroup>
 
-<Accordion title="Can I invite other teammates to my dashboard?" icon="user-plus">
+<Accordion title="Can I invite other teammates to my dashboard?">
 Yes. Invite collaborators with three role levels:
 - **Viewer**: Read-only access
 - **Editor**: Manage roles and permissions
@@ -263,11 +258,11 @@ Yes. Invite collaborators with three role levels:
 Go to **Settings → Team Members**.
 </Accordion>
 
-<Accordion title="Can I manage separate projects for dev and prod?" icon="diagram-project">
+<Accordion title="Can I manage separate projects for dev and prod?">
 Yes. Create multiple projects in your account (e.g., "My App - Dev", "My App - Prod") and manage environments independently.
 </Accordion>
 
-<Accordion title="Can teammates have different access levels?" icon="user-shield">
+<Accordion title="Can teammates have different access levels?">
 Yes. Assign dashboard roles to control access to settings, logs, and permission editing per team member.
 </Accordion>
 
@@ -281,7 +276,7 @@ Migrating from other RBAC providers and managing role/permission versions.
 
 <AccordionGroup>
 
-<Accordion title="Can I migrate from another RBAC provider?" icon="right-left">
+<Accordion title="Can I migrate from another RBAC provider?">
 Yes. Import your roles and permissions using:
 1. Our migration API (automated)
 2. CSV/JSON import in dashboard
@@ -290,7 +285,7 @@ Yes. Import your roles and permissions using:
 See [Migration Guide](/guides/migration) for provider-specific instructions.
 </Accordion>
 
-<Accordion title="Can I version roles or permissions?" icon="code-branch">
+<Accordion title="Can I version roles or permissions?">
 Not yet, but versioning is on our roadmap. Current workaround: Use different projects for versioned schemas.
 </Accordion>
 
