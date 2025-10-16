@@ -12,14 +12,47 @@
   justify-content: center !important;
 }
 
+/* ==================
+   Dark Mode Purple Glow Background
+   ================== */
+body {
+  background: #000000;
+}
+
+html.dark body {
+  background: #000000;
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 119, 198, 0.3), transparent),
+    radial-gradient(ellipse 60% 50% at 0% 50%, rgba(88, 28, 135, 0.2), transparent),
+    radial-gradient(ellipse 60% 50% at 100% 50%, rgba(109, 40, 217, 0.2), transparent);
+  background-attachment: fixed;
+}
+
+html.dark #content-area {
+  position: relative;
+}
+
+html.dark #content-area::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1000px;
+  height: 1000px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(80px);
+}
+
 .sidebar-item a:hover {
   background-color: var(--hover-bg);
 }
 
-.userback-button.userback-button-se
-    > .userback-button-content {
-      padding: 0 16px;
-    }
+.userback-button.userback-button-se > .userback-button-content {
+  padding: 0 16px;
+}
 
 /* ==================
    Utilities
@@ -33,12 +66,10 @@
   color: var(--text-tertiary);
 }
 
-#userback_button_container
-      > .userback-button.userback-button-se
-    > .userback-button-content {
-    background-color: #12066b;
-    color: #fff;
-  }
+#userback_button_container > .userback-button.userback-button-se > .userback-button-content {
+  background-color: #12066b;
+  color: #fff;
+}
 
 .text-small {
   font-size: var(--text-sm);
@@ -61,7 +92,6 @@
 .fade-in {
   animation: fadeIn var(--transition-base) ease-out;
 }
-
 
 /* ==================
    Responsive Design
