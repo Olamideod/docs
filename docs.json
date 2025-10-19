@@ -17,7 +17,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
             "group": "Getting Started",
@@ -35,7 +35,7 @@
             ]
           },
           {
-            "group": "How-to",
+            "group": "Guides",
             "pages": [
               "how-to-guides/enable-mfa",
               "how-to-guides/send-magic-link",

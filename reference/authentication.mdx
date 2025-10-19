@@ -6,7 +6,7 @@ description: "Exchange authorization codes for tokens, refresh access, and handl
 
 ## Overview
 
-The Authentication API handles OAuth 2.0 token operations. After your application redirects users to Protekt for login, you will receive an authorization code. Now we will use this API to exchange that code for access tokens, refresh expired tokens when needed, and revoke tokens when users log out.
+The Authentication API handles [OAuth 2.0 ](/support/glossary#oauth-2-0) token operations. After your application redirects users to Protekt for login, you will receive an authorization code. Now we will use this API to exchange that code for access tokens, refresh expired tokens when needed, and revoke tokens when users log out.
 
 This API implements the standard OAuth 2.0 authorization code flow. Your app never sees user passwords, because Protekt handles authentication, then returns secure tokens your app uses to make API calls on behalf of users.
 
@@ -512,6 +512,7 @@ In production, implement exponential backoff when you hit rate limits.
 
 
 ## Security best practices
+Follow this security requirements for secure integration of protekt API.
 
 <Warning>
 **Critical security requirements:**

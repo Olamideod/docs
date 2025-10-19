@@ -8,15 +8,13 @@ description: "Get secure authentication APIs and SDKs to integrate login, MFA, S
 
 # Welcome to protekt
 
-Protekt is an authentication platform that gives you secure login, multi-factor authentication (MFA), single sign-on (SSO), and role-based access control (RBAC) as part of a single system. 
+Protekt is an authentication platform that gives you secure login, [multi-factor authentication (MFA)](/support/glossary#mfa-multi-factor-authentication), [single sign-on (SSO)](/support/glossary#sso-single-sign-on), and [role-based access control (RBAC)](/support/glossary#rbac-role-based-access-control) as part of a single system. 
 ## Core features
 
-1. User registration and login: Email/password, social, and passwordless authentication
-2. Multi-factor authentication (MFA): SMS, authenticator apps, and biometric verification
-3. Enterprise SSO: SAML and OIDC protocols for seamless integration
-4. Session management: Secure token handling and automatic refresh
-5. Organization and team management: Multi-tenant support with hierarchy
-6. Role-based permissions: Fine-grained access control for your application
+1. **User registration and login**: Email/password, social, and passwordless authentication
+2. **Multi-factor authentication (MFA)**: SMS, authenticator apps, and biometric verification
+3. **Session management**: Secure token handling and automatic refresh
+4. **Role-based permissions**: Fine-grained access control for your application
 
 
 ## How it works
@@ -38,12 +36,12 @@ const { user, tokens } = await protekt.handleCallback(code);
 app.use('/api', protekt.validateJWT);
 ```
 
-This OAuth 2.0 flow ensures your application never handles sensitive credentials directly. Protekt manages password storage, MFA challenges, and session security while you focus on your product logic.
+This [OAuth 2.0 flow](/support/glossary#oauth-and-flows) ensures your application never handles sensitive credentials directly. Protekt manages password storage, MFA challenges, and session security while you focus on your product logic.
 
 
 ## What's next
 
-Below are some recommended next steps, but if this is your first time with Protekt, start with [Quickstart](getting-started/quickstart).
+Below are some recommended next steps, but if this is your first time with Protekt, start with [Quickstart](/getting-started/quickstart).
 
 <CardGroup cols={2}>
   <Card

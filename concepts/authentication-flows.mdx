@@ -1,11 +1,15 @@
 ---
 title: "Authentication Flows"
-description: "Understanding how different authentication patterns work and when to use each"
+description: "Understanding different authentication flows"
 ---
+<Tip>
+This Page explains how different authentication patterns work and when to use them.
+</Tip>
 
+## Overview
 When you click Login in an application, a series of steps quietly takes place behind the scenes. This series is called an authentication flow.
 
-Nearly everyone has used one, and nearly everyone assumes they all work the same way. But they don’t. Passwordless login, enterprise SSO, mobile apps, and API services each demand a different kind of flow.
+Nearly everyone has used one, and nearly everyone assumes they all work the same way. But they don’t. Passwordless login, enterprise [SSO](/support/glossary#sso-single-sign-on), mobile apps, and API services each demand a different kind of flow.
 
 And that difference matters. Using the wrong approach makes authentication harder to maintain and less secure. Using the right flow makes it easier for both developers and users.
 
@@ -50,7 +54,7 @@ app.get('/callback', async (req, res) => {
 
 ## Authorization code with pkce (mobile & spa)
 
-PKCE (Proof Key for Code Exchange) is for applications that can't securely store secrets mobile apps and single-page applications.
+[PKCE (Proof Key for Code Exchange)](/support/glossary#pkce-proof-key-for-code-exchange) is for applications that can't securely store secrets mobile apps and single-page applications.
 
 **How it works:**
 1. App generates random code verifier
@@ -131,7 +135,7 @@ await protekt.sendMagicLink({
 
 ## Saml flow (enterprise sso)
 
-SAML is how enterprises do single sign-on. When employees click "Sign in with Okta" or "Sign in with Azure AD," SAML handles it.
+[SAML (Security Assertion Markup Language)](/support/glossary#saml-security-assertion-markup-language) is how enterprises do single sign-on. When employees click "Sign in with Okta" or "Sign in with Azure AD," SAML handles it.
 
 **How it works:**
 1. User clicks SSO and gets Redirected to identity provider
@@ -222,9 +226,9 @@ All flows share common security principles:
 
 **Long-lived refresh tokens**: Days/weeks, can be revoked
 
-**State parameter** - Prevents CSRF attacks on OAuth flows
+**State parameter**: Prevents CSRF attacks on OAuth flows
 
-**Token storage** - Never localStorage for sensitive tokens, use httpOnly cookies or secure storage
+**Token storage**: Never localStorage for sensitive tokens, use httpOnly cookies or secure storage
 
 ## Common mistakes
 
