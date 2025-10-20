@@ -1,0 +1,146 @@
+---
+title: "Protekt"
+description: "Authentication-as-a-service for fast-moving engineering teams"
+---
+
+import { HomeHero } from '/components/home-hero.mdx';
+
+<HomeHero />
+
+<Tip>
+Beautiful defaults. Bring your own components when you need to go further —
+Mintlify MDX supports Cards, Steps, Tabs, Accordions, and CodeGroups out of the box.
+</Tip>
+
+## Install the SDK
+
+<CodeGroup>
+
+```bash npm
+npm install @protekt/javascript
+```
+
+```bash pnpm
+pnpm add @protekt/javascript
+```
+
+```bash yarn
+yarn add @protekt/javascript
+```
+
+```bash python
+pip install protekt
+```
+
+```bash go
+go get github.com/protekt/go
+```
+
+</CodeGroup>
+
+## Get started in 3 steps
+
+<Steps>
+  <Step title="Create your project">
+    Sign up, create an app in the dashboard, and grab your client ID.
+  </Step>
+  <Step title="Initialize the SDK">
+    Add the SDK to your app and set the redirect URL.
+  </Step>
+  <Step title="Protect a route">
+    Verify sessions on the server or guard client routes and you’re live.
+  </Step>
+</Steps>
+
+## Choose your stack
+
+<Tabs>
+  <Tab title="JavaScript">
+
+```javascript
+import Protekt from '@protekt/javascript';
+const protekt = new Protekt({ clientId: 'pk_live_xxx', redirectUri: '/callback' });
+await protekt.init();
+```
+
+  </Tab>
+  <Tab title="Python">
+
+```python
+from protekt import Protekt
+protekt = Protekt(client_id='pk_live_xxx')
+```
+
+  </Tab>
+  <Tab title="Go">
+
+```go
+import "github.com/protekt/go"
+// See docs/sdks/go for middleware examples
+```
+
+  </Tab>
+</Tabs>
+
+## Frequently asked
+
+<AccordionGroup>
+  <Accordion title="Is Protekt enterprise ready?">
+    Yes. SSO (SAML/OIDC), MFA, RBAC, audit logs, SCIM, and fine‑grained API permissions are built in.
+  </Accordion>
+  <Accordion title="How do I validate tokens?">
+    Use the server SDK middleware or call the `validate` endpoint. See the API Reference for examples.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Get Started
+
+<CardGroup cols={3}>
+  <Card title="Quickstart" icon="rocket" href="/getting-started/quickstart">
+    Add user sign-in and protect routes in minutes.
+  </Card>
+  <Card title="First Integration" icon="bolt" href="/tutorials/first-integration">
+    Build your first full flow with step-by-step guidance.
+  </Card>
+  <Card title="Secure Your App" icon="shield" href="/tutorials/secure-your-app">
+    Best practices for tokens, sessions, and secure defaults.
+  </Card>
+</CardGroup>
+
+---
+
+## Build
+
+<CardGroup cols={3}>
+  <Card title="JavaScript SDK" icon="code" href="/sdks/javascript">
+    Frontend helpers, hooks, and auth components for JS/TS.
+  </Card>
+  <Card title="Python SDK" icon="python" href="/sdks/python">
+    Server utilities for validating tokens and sessions.
+  </Card>
+  <Card title="Go SDK" icon="box" href="/sdks/go">
+    Lightweight middleware and helpers for Go services.
+  </Card>
+</CardGroup>
+
+---
+
+## Explore
+
+<CardGroup cols={3}>
+  <Card title="Authentication Flows" icon="layers" href="/concepts/authentication-flows">
+    Learn how Protekt handles magic links, SSO, and MFA.
+  </Card>
+  <Card title="RBAC & Permissions" icon="lock" href="/concepts/rbac-permissions">
+    Design scalable authorization with roles and fine-grained rules.
+  </Card>
+  <Card title="API Overview" icon="terminal" href="/reference/api-overview">
+    Discover endpoints, schemas, and webhooks to integrate faster.
+  </Card>
+</CardGroup>
+
+---
+
+Need help? Check the <a href="/support/faq">FAQ</a> or contact <a href="mailto:support@protekt.com">support@protekt.com</a>.

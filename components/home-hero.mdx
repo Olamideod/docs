@@ -1,0 +1,27 @@
+export function HomeHero() {
+  return (
+    <section id="home-root" className="home-hero-section fade-in" aria-label="Protekt hero">
+      <div className="home-aurora-bg" aria-hidden="true" />
+
+      <div className="home-hero-content">
+        <h1 className="home-title">The Intelligent Authentication Platform</h1>
+        <p className="home-tagline text-muted">
+          Meet the next generation of authentication. Beautiful out-of-the-box,
+          secure by default, and built for scale.
+        </p>
+
+        <div className="home-cta-bar" role="group" aria-label="Get started">
+          <input className="home-input" type="email" placeholder="Email address" aria-label="Email address" />
+          <a className="home-start" href="/getting-started/quickstart">Start now</a>
+        </div>
+      </div>
+
+      <img
+        className="home-preview"
+        src="/images/hero-light.png"
+        alt="Protekt dashboard preview"
+      />
+    </section>
+  );
+}
+
